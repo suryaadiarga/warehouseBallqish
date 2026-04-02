@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
@@ -16,13 +13,27 @@ return new class extends Migration
             $table->string('name');
             $table->timestamps();
         });
+
+        // Selipkan Master Data Gudang & Supplier di sini
+        Schema::create('warehouses', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('location')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('suppliers', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('contact')->nullable();
+            $table->timestamps();
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('warehouses');
         Schema::dropIfExists('categories');
     }
 };

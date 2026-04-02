@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\StockMutation;
-use Exception;
-use Illuminate\Support\Facades\Auth;
+use App\Services\StockMutationService;
+use Illuminate\Http\Request;
 
 class StockMutationController extends Controller
 {
+    protected $mutationService;
+
+    public function __construct(StockMutationService $mutationService)
+    {
+        $this->mutationService = $mutationService;
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -18,47 +24,46 @@ class StockMutationController extends Controller
             'note' => 'nullable|string'
         ]);
 
-        // Audit Trail: Mencatat user_id yang membuat draft (Staff/Admin)
-        $mutation = StockMutation::create([
-            'user_id' => Auth::id(), 
-            'product_id' => $request->product_id,
-            'type' => $request->type,
-            'quantity' => $request->quantity,
-            'note' => $request->note,
-            'status' => 'draft'
-        ]);
+        $mutation = $this->mutationService->createDraft($request->all(), $request->user()->id);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Transaksi berhasil dibuat (Status: Draft)',
-            'data' => $mutation->load('product') // Load data produk
+            'status' => 'success',
+            'message' => 'Draft mutasi berhasil dibuat',
+            'data' => $mutation
         ]);
     }
 
-    public function approve($id)
+    public function approve($id, Request $request)
     {
-        try {
-            // Proteksi Role: Hanya admin_gudang yang boleh approve
-            if (Auth::user()->role !== 'admin_gudang') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Hanya Admin Gudang yang memiliki otoritas untuk menyetujui transaksi.'
-                ], 403);
-            }
+        $mutation = $this->mutationService->approveMutation($id, $request->user()->role);
+        
+        $mutation->update(['approved_by' => $request->user()->id]);
 
-            $mutation = StockMutation::findOrFail($id);
-            
-            $mutation->approve();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Mutasi berhasil disetujui',
+            'data' => $mutation
+        ]);
+    }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaksi disetujui, stok produk telah diperbarui.'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+    public function reject($id, Request $request)
+    {
+        $mutation = StockMutation::findOrFail($id);
+        
+        $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
+        if (!in_array($request->user()->role, $allowedRoles)) {
+            return response()->json(['message' => 'Hanya Admin yang bisa menolak mutasi.'], 403);
         }
+
+        if ($mutation->status === 'approved') {
+            return response()->json(['message' => 'Tidak bisa menolak mutasi yang sudah disetujui sebelumnya.'], 400);
+        }
+
+        $mutation->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Mutasi ditolak dan dihapus dari sistem.'
+        ]);
     }
 }

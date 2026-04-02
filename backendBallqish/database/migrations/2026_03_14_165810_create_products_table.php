@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained();
             $table->string('sku')->unique();
+            $table->string('barcode')->unique()->nullable(); // Tambahan Premium
             $table->string('name');
             $table->integer('stock')->default(0);
+            $table->integer('min_stock_level')->default(10); // Tambahan Premium
             $table->decimal('price', 15, 2);
             $table->timestamps();
         });

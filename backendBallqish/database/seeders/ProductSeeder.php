@@ -2,39 +2,30 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Product;
 use Illuminate\Database\Seeder;
+use App\Models\Product;
+use App\Models\Category;
 
 class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        // Menggunakan updateOrCreate supaya aman kalau di-run ulang
-        $category = Category::updateOrCreate(['name' => 'Suku Cadang']);
+        $total = 10000;
+        $chunk = 500; // per batch
 
-        Product::create([
-            'category_id' => $category->id,
-            'sku' => 'BRG-001',
-            'name' => 'Ban Dunlop',
-            'stock' => 20,
-            'price' => 750000,
-        ]);
+        $categories = Category::pluck('id')->toArray();
 
-        Product::create([
-            'category_id' => $category->id,
-            'sku' => 'BRG-002',
-            'name' => 'Kampas Rem',
-            'stock' => 5,
-            'price' => 15000,
-        ]);
+        for ($i = 0; $i < $total / $chunk; $i++) {
+            $data = Product::factory()
+                ->count($chunk)
+                ->make()
+                ->map(function ($item) use ($categories) {
+                    $item->category_id = $categories[array_rand($categories)];
+                    return $item->toArray();
+                })
+                ->toArray();
 
-        Product::create([
-            'category_id' => $category->id,
-            'sku' => 'BRG-003',
-            'name' => 'Filter Udara',
-            'stock' => 5,
-            'price' => 120000,
-        ]);
+            Product::insert($data);
+        }
     }
 }
