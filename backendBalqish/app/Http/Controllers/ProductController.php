@@ -12,12 +12,10 @@ class ProductController extends Controller
 {
     $query = Product::with('category');
 
-    // Filter berdasarkan kategori jika ada request dari Next.js
     if ($request->has('category_id')) {
         $query->where('category_id', $request->category_id);
     }
 
-    // Pencarian berdasarkan nama atau SKU (Sesuai naskah )
     if ($request->has('search')) {
         $query->where('name', 'like', '%' . $request->search . '%')
               ->orWhere('sku', 'like', '%' . $request->search . '%');

@@ -13,22 +13,30 @@ class StockMutation extends Model
     {
         return $this->belongsTo(Product::class);
     }
-    
+
     public function approve()
     {
         return DB::transaction(function () {
-            if ($this->status !== 'draft') return false;
-
-            // Jika barang MASUK, stok bertambah 
-            if ($this->type === 'in') {
-                $this->product->increment('stock', $this->quantity);
-            } 
-            // Jika barang KELUAR, stok berkurang
-            else {
-                $this->product->decrement('stock', $this->quantity);
+            if ($this->status === 'approved') {
+                throw new \Exception("Transaksi ini sudah disetujui sebelumnya.");
             }
 
-            return $this->update(['status' => 'approved']);
+            $product = $this->product;
+
+            if ($this->type === 'in') {
+                $product->increment('stock', $this->quantity);
+            } else {
+                // VALIDASI: Cek apakah stok cukup sebelum dikurangi
+                if ($product->stock < $this->quantity) {
+                    throw new \Exception("Stok tidak mencukupi untuk transaksi ini! Sisa stok: " . $product->stock);
+                }
+                $product->decrement('stock', $this->quantity);
+            }
+
+            $this->status = 'approved';
+            $this->save();
+
+            return $this;
         });
     }
 }
