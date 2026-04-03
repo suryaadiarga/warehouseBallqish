@@ -14,7 +14,12 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'total_products' => Product::count(),
-                'low_stock_alerts' => Product::where('stock', '<', 10)->get(),
+                'low_stock_alerts' => Product::query()
+                    ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+                    ->whereColumn('stock', '<=', 'min_stock_level')
+                    ->orderBy('stock')
+                    ->limit(20)
+                    ->get(),
                 // Hanya hitung yang sudah disetujui (Approved)
                 'total_inbound_today' => StockMutation::where('type', 'in')
                     ->where('status', 'approved')
