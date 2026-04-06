@@ -12,7 +12,10 @@ class CategoryController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'data' => Category::latest()->get()
+            'data' => Category::query()
+                ->select(['id', 'name'])
+                ->latest()
+                ->get()
         ]);
     }
 
