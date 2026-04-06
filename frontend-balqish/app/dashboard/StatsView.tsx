@@ -3,7 +3,11 @@ import { Package, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock, ChevronRig
 export default function StatsView({ stats }: any) {
     // Ambil sebagian data dari mutations untuk recent activity (kalau ada)
     const recentActivities = stats.recent_activities?.slice(0, 5) || [];
-    const lowStocks = stats.all_products?.filter((p: any) => p.stock <= (p.min_stock_level || 10)).slice(0, 5) || [];
+    const lowStocks = (
+        stats.low_stock_alerts?.slice(0, 5)
+        ?? stats.all_products?.filter((p: any) => p.stock <= (p.min_stock_level || 10)).slice(0, 5)
+        ?? []
+    );
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

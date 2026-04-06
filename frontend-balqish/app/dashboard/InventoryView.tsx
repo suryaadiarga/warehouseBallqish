@@ -2,7 +2,7 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import { Plus, Trash2, Box, FolderTree } from 'lucide-react';
 
-export default function InventoryView({ products, categories, onRefresh }: any) {
+export default function InventoryView({ products, categories, onRefresh, pagination, onPageChange, loadingProducts, productSearch, categoryFilter, onProductSearchChange, onCategoryFilterChange }: any) {
     const [activeTab, setActiveTab] = useState('products'); // 'products' | 'categories'
     const [loading, setLoading] = useState(false);
 
@@ -101,6 +101,26 @@ export default function InventoryView({ products, categories, onRefresh }: any) 
                         </button>
                     </div>
 
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3">
+                        <select
+                            className="w-full md:w-64 p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
+                            value={categoryFilter ?? ''}
+                            onChange={(e) => onCategoryFilterChange?.(e.target.value)}
+                        >
+                            <option value="">Semua Kategori</option>
+                            {categories?.map((c: any) => (
+                                <option key={c.id} value={String(c.id)}>{c.name}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Cari nama / SKU"
+                            value={productSearch ?? ''}
+                            onChange={(e) => onProductSearchChange?.(e.target.value)}
+                        />
+                    </div>
+
                     {showProductForm && (
                         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                             <form onSubmit={handleProductSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -146,24 +166,57 @@ export default function InventoryView({ products, categories, onRefresh }: any) 
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-sm">
-                                {products?.map((p: any) => (
-                                    <tr key={p.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-4 font-mono">
-                                            <span className="text-blue-600 font-bold block">{p.sku}</span>
-                                            <span className="text-slate-400 text-xs">{p.barcode || '-'}</span>
-                                        </td>
-                                        <td className="px-6 py-4 font-bold">{p.name}</td>
-                                        <td className="px-6 py-4">{p.category?.name}</td>
-                                        <td className="px-6 py-4 text-center font-black text-lg">{p.stock}</td>
-                                        <td className="px-6 py-4 text-center">
-                                            <button onClick={() => handleDeleteProduct(p.id, p.name)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
-                                                <Trash2 size={18} />
-                                            </button>
+                                {loadingProducts ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-bold animate-pulse">
+                                            Memuat data produk...
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    products?.map((p: any) => (
+                                        <tr key={p.id} className="hover:bg-slate-50">
+                                            <td className="px-6 py-4 font-mono">
+                                                <span className="text-blue-600 font-bold block">{p.sku}</span>
+                                                <span className="text-slate-400 text-xs">{p.barcode || '-'}</span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold">{p.name}</td>
+                                            <td className="px-6 py-4">{p.category?.name}</td>
+                                            <td className="px-6 py-4 text-center font-black text-lg">{p.stock}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button onClick={() => handleDeleteProduct(p.id, p.name)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-slate-500">
+                        <span>
+                            Halaman <span className="font-bold text-slate-700">{pagination?.page ?? 1}</span> dari{' '}
+                            <span className="font-bold text-slate-700">{pagination?.lastPage ?? 1}</span>
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => onPageChange?.((pagination?.page ?? 1) - 1)}
+                                disabled={loadingProducts || (pagination?.page ?? 1) <= 1}
+                                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white font-bold"
+                            >
+                                Prev
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onPageChange?.((pagination?.page ?? 1) + 1)}
+                                disabled={loadingProducts || (pagination?.page ?? 1) >= (pagination?.lastPage ?? 1)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white font-bold"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

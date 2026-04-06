@@ -8,17 +8,8 @@ export default function DashboardHome() {
 
     const loadData = async () => {
         try {
-            const [dashRes, prodRes, mutRes] = await Promise.all([
-                api.get('/dashboard'),
-                api.get('/products'),
-                api.get('/reports/mutations')
-            ]);
-            
-            setData({
-                ...dashRes.data.data,
-                all_products: prodRes.data.data,
-                recent_activities: mutRes.data.data
-            });
+            const dashRes = await api.get('/dashboard');
+            setData(dashRes.data.data);
         } catch (error) {
             console.error("Gagal sinkronisasi data dashboard:", error);
         }
