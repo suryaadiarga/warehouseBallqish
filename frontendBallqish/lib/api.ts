@@ -81,19 +81,11 @@ export function extractApiErrorMessage(error: unknown, fallback = 'Terjadi kesal
 }
 
 const api = axios.create({
-<<<<<<< HEAD
-    baseURL: '/api',
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-    },
-=======
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8888/api',
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
->>>>>>> 58f3523 (Initial commit: WMS Ballqish fullstack (backend + frontend + features))
 });
 
 api.interceptors.request.use((config) => {
