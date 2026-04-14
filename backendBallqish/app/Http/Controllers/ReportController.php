@@ -18,17 +18,20 @@ class ReportController extends Controller
 
         $mutations = $query->latest()->paginate(20);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $mutations->items(),
-            'meta' => [
+        return $this->successResponse(
+            $mutations->items(),
+            'Riwayat mutasi berhasil diambil',
+            200,
+            [
                 'total_in' => (clone $query)->where('type', 'in')->sum('quantity'),
                 'total_out' => (clone $query)->where('type', 'out')->sum('quantity'),
                 'pagination' => [
                     'current_page' => $mutations->currentPage(),
                     'last_page' => $mutations->lastPage(),
-                ]
+                    'per_page' => $mutations->perPage(),
+                    'total' => $mutations->total(),
+                ],
             ]
-        ]);
+        );
     }
 }

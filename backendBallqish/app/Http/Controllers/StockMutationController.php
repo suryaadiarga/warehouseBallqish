@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreStockMutationRequest;
 use App\Models\StockMutation;
 use App\Services\StockMutationService;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class StockMutationController extends Controller
@@ -15,35 +18,29 @@ class StockMutationController extends Controller
         $this->mutationService = $mutationService;
     }
 
-    public function store(Request $request)
+    public function store(StoreStockMutationRequest $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'type' => 'required|in:in,out',
-            'quantity' => 'required|integer|min:1',
-            'note' => 'nullable|string'
-        ]);
+        $mutation = $this->mutationService
+            ->createDraft($request->validated(), $request->user()->id)
+            ->load(['product:id,name,sku', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
 
-        $mutation = $this->mutationService->createDraft($request->all(), $request->user()->id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Draft mutasi berhasil dibuat',
-            'data' => $mutation
-        ]);
+        return $this->successResponse($mutation, 'Draft mutasi berhasil dibuat', 201);
     }
 
     public function approve($id, Request $request)
     {
-        $mutation = $this->mutationService->approveMutation($id, $request->user()->role);
-        
-        $mutation->update(['approved_by' => $request->user()->id]);
+        try {
+            $mutation = $this->mutationService->approveMutation($id, $request->user()->role, $request->user()->id);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Mutasi berhasil disetujui',
-            'data' => $mutation
-        ]);
+            return $this->successResponse($mutation, 'Mutasi berhasil disetujui');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Data mutasi tidak ditemukan.', 404);
+        } catch (Exception $e) {
+            $status = $e->getCode();
+            $status = is_int($status) && $status >= 400 && $status < 600 ? $status : 400;
+
+            return $this->errorResponse($e->getMessage(), $status);
+        }
     }
 
     public function reject($id, Request $request)
@@ -52,18 +49,15 @@ class StockMutationController extends Controller
         
         $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
         if (!in_array($request->user()->role, $allowedRoles)) {
-            return response()->json(['message' => 'Hanya Admin yang bisa menolak mutasi.'], 403);
+            return $this->errorResponse('Hanya admin yang bisa menolak mutasi.', 403);
         }
 
         if ($mutation->status === 'approved') {
-            return response()->json(['message' => 'Tidak bisa menolak mutasi yang sudah disetujui sebelumnya.'], 400);
+            return $this->errorResponse('Tidak bisa menolak mutasi yang sudah disetujui sebelumnya.', 400);
         }
 
         $mutation->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Mutasi ditolak dan dihapus dari sistem.'
-        ]);
+        return $this->successResponse(null, 'Mutasi ditolak dan dihapus dari sistem.');
     }
 }

@@ -23,4 +23,19 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function productStocks()
+    {
+        return $this->hasMany(ProductStock::class);
+    }
+
+    public function stockMutations()
+    {
+        return $this->hasMany(StockMutation::class);
+    }
+
+    public function stockOpnameItems()
+    {
+        return $this->hasMany(StockOpnameItem::class);
+    }
 }

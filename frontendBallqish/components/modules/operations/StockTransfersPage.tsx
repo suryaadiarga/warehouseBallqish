@@ -1,0 +1,326 @@
+'use client';
+
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useToast } from '@/components/providers/ToastProvider';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { InventoryMovementBadge } from '@/components/ui/InventoryMovementBadge';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
+import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
+import { hasInventoryAdminAccess } from '@/lib/auth';
+import { ArrowLeftRight, PackageSearch, Warehouse } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+type ProductOption = { id: number; name: string; sku: string };
+type WarehouseOption = { id: number; name: string };
+type WarehouseLocationOption = { id: number; warehouse_id: number; code: string; name: string };
+
+type TransferMutation = {
+  id: number;
+  reference_number?: string | null;
+  type: 'in' | 'out';
+  quantity: number;
+  before_qty?: number | null;
+  after_qty?: number | null;
+  warehouse?: { id: number; name: string } | null;
+  warehouseLocation?: { id: number; code: string; name: string } | null;
+};
+
+type TransferResult = {
+  transfer_id: string;
+  mutations: TransferMutation[];
+};
+
+export function StockTransfersPage() {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const [locations, setLocations] = useState<WarehouseLocationOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [result, setResult] = useState<TransferResult | null>(null);
+  const [form, setForm] = useState({
+    product_id: '',
+    from_warehouse_id: '',
+    to_warehouse_id: '',
+    from_warehouse_location_id: '',
+    to_warehouse_location_id: '',
+    quantity: 1,
+    note: '',
+  });
+
+  const canOperate = hasInventoryAdminAccess(user?.role);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const [productRes, warehouseRes, locationRes] = await Promise.all([
+        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 100 } }),
+        api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
+        api.get<ApiEnvelope<WarehouseLocationOption[]>>('/warehouse-locations'),
+      ]);
+
+      setProducts(productRes.data.data);
+      setWarehouses(warehouseRes.data.data);
+      setLocations(locationRes.data.data);
+    } catch (err: unknown) {
+      setError(extractApiErrorMessage(err, 'Gagal memuat referensi transfer stok.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  const fromLocations = useMemo(
+    () => locations.filter((location) => String(location.warehouse_id) === form.from_warehouse_id),
+    [form.from_warehouse_id, locations]
+  );
+
+  const toLocations = useMemo(
+    () => locations.filter((location) => String(location.warehouse_id) === form.to_warehouse_id),
+    [form.to_warehouse_id, locations]
+  );
+
+  const validateBeforeConfirm = () => {
+    if (!form.product_id || !form.from_warehouse_id || !form.to_warehouse_id) {
+      showToast({
+        type: 'error',
+        title: 'Form belum lengkap',
+        description: 'Produk, gudang asal, dan gudang tujuan wajib diisi.',
+      });
+      return false;
+    }
+
+    if (form.from_warehouse_id === form.to_warehouse_id) {
+      showToast({
+        type: 'error',
+        title: 'Gudang tidak valid',
+        description: 'Gudang asal dan gudang tujuan harus berbeda.',
+      });
+      return false;
+    }
+
+    if (form.quantity < 1) {
+      showToast({
+        type: 'error',
+        title: 'Quantity tidak valid',
+        description: 'Quantity transfer minimal 1.',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const submitTransfer = async () => {
+    setSubmitting(true);
+
+    try {
+      const response = await api.post<ApiEnvelope<TransferResult>>('/stock-transfers', {
+        product_id: Number(form.product_id),
+        from_warehouse_id: Number(form.from_warehouse_id),
+        to_warehouse_id: Number(form.to_warehouse_id),
+        from_warehouse_location_id: form.from_warehouse_location_id ? Number(form.from_warehouse_location_id) : undefined,
+        to_warehouse_location_id: form.to_warehouse_location_id ? Number(form.to_warehouse_location_id) : undefined,
+        quantity: Number(form.quantity),
+        note: form.note || undefined,
+      });
+
+      setResult(response.data.data);
+      setConfirmOpen(false);
+      setForm({
+        product_id: '',
+        from_warehouse_id: '',
+        to_warehouse_id: '',
+        from_warehouse_location_id: '',
+        to_warehouse_location_id: '',
+        quantity: 1,
+        note: '',
+      });
+      showToast({
+        type: 'success',
+        title: 'Transfer berhasil',
+        description: response.data.message,
+      });
+    } catch (err: unknown) {
+      showToast({
+        type: 'error',
+        title: 'Transfer gagal',
+        description: extractApiErrorMessage(err, 'Periksa stok asal dan pasangan gudang/lokasi yang dipilih.'),
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingState title="Memuat data transfer stok" description="Mengambil referensi produk, gudang, dan lokasi dari backend." />;
+  }
+
+  if (error) {
+    return <ErrorState title="Transfer stok gagal dimuat" description={error} />;
+  }
+
+  if (products.length === 0 || warehouses.length < 2) {
+    return (
+      <div className="space-y-6">
+        <PageHeader eyebrow="Warehouse Operations" title="Stock Transfers" description="Transfer stok antar gudang secara atomic berdasarkan endpoint backend yang sudah tersedia." />
+        <EmptyState title="Referensi transfer belum siap" description="Pastikan minimal ada satu produk dan dua gudang sebelum membuat transfer stok." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Warehouse Operations"
+        title="Stock Transfers"
+        description="Pindahkan stok antar gudang dalam satu transaksi backend yang atomic. Form ini langsung mengikuti kontrak `/api/stock-transfers`."
+      />
+
+      <div className="grid gap-5 xl:grid-cols-3">
+        <MetricCard label="Products Ready" value={products.length} icon={PackageSearch} description="Produk yang bisa dipilih untuk transfer." />
+        <MetricCard label="Warehouses" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang sumber dan tujuan transfer." />
+        <MetricCard label="Last Result" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" description="Transfer ID terakhir dari backend." />
+      </div>
+
+      <section className="surface-card rounded-[28px] p-6">
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Role Anda bukan admin gudang. Form tetap ditampilkan untuk referensi, tetapi backend dapat menolak submit jika otoritas tidak cukup.</div> : null}
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (validateBeforeConfirm()) {
+              setConfirmOpen(true);
+            }
+          }}
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        >
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Produk</label>
+            <select value={form.product_id} onChange={(event) => setForm((current) => ({ ...current, product_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+              <option value="">Pilih produk</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} ({product.sku})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Gudang Asal</label>
+            <select value={form.from_warehouse_id} onChange={(event) => setForm((current) => ({ ...current, from_warehouse_id: event.target.value, from_warehouse_location_id: '' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+              <option value="">Pilih gudang asal</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Asal</label>
+            <select value={form.from_warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, from_warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">Tanpa lokasi detail</option>
+              {fromLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.code} - {location.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Gudang Tujuan</label>
+            <select value={form.to_warehouse_id} onChange={(event) => setForm((current) => ({ ...current, to_warehouse_id: event.target.value, to_warehouse_location_id: '' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+              <option value="">Pilih gudang tujuan</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Tujuan</label>
+            <select value={form.to_warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, to_warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">Tanpa lokasi detail</option>
+              {toLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.code} - {location.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Quantity</label>
+            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((current) => ({ ...current, quantity: Number(event.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
+          </div>
+          <div className="md:col-span-2 xl:col-span-3">
+            <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
+            <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Contoh: transfer ke gudang cabang untuk replenishment." />
+          </div>
+          <div className="md:col-span-2 xl:col-span-3">
+            <button type="submit" className="rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white transition hover:bg-sky-700">Proses Transfer</button>
+          </div>
+        </form>
+      </section>
+
+      {result ? (
+        <section className="surface-card rounded-[28px] overflow-hidden">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h3 className="text-lg font-black text-slate-900">Hasil Transfer</h3>
+            <p className="mt-1 text-sm text-slate-500">Transfer berhasil diproses oleh backend dengan grouping transfer ID yang sama.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <tr>
+                  <th className="px-6 py-4">Reference</th>
+                  <th className="px-6 py-4">Movement</th>
+                  <th className="px-6 py-4">Warehouse</th>
+                  <th className="px-6 py-4">Before</th>
+                  <th className="px-6 py-4">Qty</th>
+                  <th className="px-6 py-4">After</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {result.mutations.map((mutation) => (
+                  <tr key={mutation.id} className="hover:bg-slate-50/80">
+                    <td className="px-6 py-4">
+                      <p className="font-mono text-xs text-slate-700">{mutation.reference_number ?? '-'}</p>
+                      <p className="mt-1 text-xs text-slate-500">{result.transfer_id}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <InventoryMovementBadge type={mutation.type} />
+                        <InventoryMovementBadge source="transfer" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      <p className="font-semibold text-slate-900">{mutation.warehouse?.name ?? '-'}</p>
+                      <p className="mt-1 text-xs text-slate-500">{mutation.warehouseLocation ? `${mutation.warehouseLocation.code} - ${mutation.warehouseLocation.name}` : 'Tanpa lokasi detail'}</p>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-700">{mutation.before_qty ?? '-'}</td>
+                    <td className="px-6 py-4 font-black text-slate-900">{mutation.quantity}</td>
+                    <td className="px-6 py-4 font-bold text-emerald-700">{mutation.after_qty ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      <ConfirmDialog open={confirmOpen} title="Proses transfer stok?" description="Transfer akan membuat mutasi keluar dan masuk sekaligus. Backend akan menolak jika stok asal tidak mencukupi." confirmLabel="Ya, Proses Transfer" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitTransfer()} />
+    </div>
+  );
+}

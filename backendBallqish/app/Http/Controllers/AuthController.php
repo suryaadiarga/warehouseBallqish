@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdatePasswordRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -13,48 +14,35 @@ class AuthController extends Controller
     /**
      * REGISTRASI USER BARU (Opsional, biasanya untuk staff baru)
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed', // Butuh field password_confirmation di frontend
-            'role' => 'nullable|in:staff,admin_gudang' // Default staff jika tidak diisi
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'staff',
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'] ?? 'staff',
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Registrasi berhasil',
-            'data' => [
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ]
-        ], 201);
+        return $this->successResponse([
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ], 'Registrasi berhasil', 201);
     }
 
     /**
      * LOGIN USER
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $validated = $request->validated();
+        $user = User::where('email', $validated['email'])->first();
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Kredensial yang diberikan tidak cocok dengan data kami.'],
             ]);
@@ -65,73 +53,53 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Login berhasil',
-            'data' => [
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ]
-        ]);
+        return $this->successResponse([
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ], 'Login berhasil');
     }
 
     /**
      * LOGOUT USER (Hapus Token Aktif)
      */
-    public function logout(Request $request)
+    public function logout(\Illuminate\Http\Request $request)
     {
         // Menghapus token yang sedang digunakan untuk request ini
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Berhasil logout dan token telah dihapus'
-        ]);
+        return $this->successResponse(null, 'Berhasil logout dan token telah dihapus');
     }
 
     /**
      * GET PROFILE (Untuk mengecek token masih valid / ambil data user saat refresh page)
      */
-    public function me(Request $request)
+    public function me(\Illuminate\Http\Request $request)
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $request->user()
-        ]);
+        return $this->successResponse($request->user(), 'Profil pengguna berhasil diambil');
     }
 
     /**
      * UBAH PASSWORD / RESET
      */
-    public function updatePassword(Request $request)
+    public function updatePassword(UpdatePasswordRequest $request)
     {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:8|confirmed', // Butuh field new_password_confirmation
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
 
         // cek apakah password lama benar
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Password saat ini salah!'
-            ], 400);
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return $this->errorResponse('Password saat ini salah!', 400);
         }
 
         // update password baru
         $user->update([
-            'password' => Hash::make($request->new_password)
+            'password' => Hash::make($validated['new_password'])
         ]);
 
         // Opsional: Hapus semua token agar user harus login ulang dengan password baru
         $user->tokens()->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Password berhasil diubah. Silakan login kembali.'
-        ]);
+        return $this->successResponse(null, 'Password berhasil diubah. Silakan login kembali.');
     }
 }
