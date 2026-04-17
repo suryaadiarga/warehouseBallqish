@@ -9,18 +9,47 @@ class StockMutation extends Model
 {
     protected $fillable = [
         'product_id',
+        'warehouse_id',
+        'warehouse_location_id',
+        'from_warehouse_id',
+        'to_warehouse_id',
         'user_id',
         'approved_by',
         'reference_number',
+        'mutation_source',
+        'transfer_id',
         'type',
         'quantity',
         'status',
-        'note'
+        'note',
+        'reason',
+        'before_qty',
+        'after_qty',
     ];
 
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function warehouseLocation()
+    {
+        return $this->belongsTo(WarehouseLocation::class);
+    }
+
+    public function fromWarehouse()
+    {
+        return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
+    }
+
+    public function toWarehouse()
+    {
+        return $this->belongsTo(Warehouse::class, 'to_warehouse_id');
     }
 
     public function user() {
@@ -55,6 +84,6 @@ class StockMutation extends Model
 
     public function approver()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

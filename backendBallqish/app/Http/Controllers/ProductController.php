@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProductRequest;
 use App\Models\Product;
+use App\Models\StockMutation;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -30,40 +32,112 @@ class ProductController extends Controller
 
         $products = $query->latest()->paginate($perPage);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $products->items(),
-            'meta' => [
+        return $this->successResponse(
+            $products->items(),
+            'Data produk berhasil diambil',
+            200,
+            [
                 'pagination' => [
                     'current_page' => $products->currentPage(),
                     'last_page' => $products->lastPage(),
                     'per_page' => $products->perPage(),
                     'total' => $products->total(),
-                ]
+                ],
             ]
-        ]);
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'sku' => 'required|unique:products,sku',
-            'barcode' => 'nullable|unique:products,barcode',
-            'name' => 'required|string',
-            'min_stock_level' => 'required|integer|min:0',
-            'price' => 'required|numeric|min:0',
-        ]);
-        
+        $validated = $request->validated();
         $validated['stock'] = 0; // Stok awal wajib 0, harus lewat mutasi IN
-        Product::create($validated);
-        
-        return response()->json(['status' => 'success', 'message' => 'Produk berhasil ditambahkan']);
+
+        $product = Product::create($validated);
+
+        return $this->successResponse($product, 'Produk berhasil ditambahkan', 201);
     }
 
     public function destroy($id)
     {
-        Product::destroy($id);
-        return response()->json(['status' => 'success', 'message' => 'Produk dihapus']);
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return $this->successResponse(null, 'Produk berhasil dihapus');
+    }
+
+    public function stocks($id)
+    {
+        $product = Product::query()
+            ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+            ->with([
+                'productStocks' => fn ($query) => $query
+                    ->with([
+                        'warehouse:id,name,location',
+                        'warehouseLocation:id,warehouse_id,code,name',
+                    ])
+                    ->orderByDesc('quantity'),
+            ])
+            ->findOrFail($id);
+
+        return $this->successResponse([
+            'product' => $product->only(['id', 'name', 'sku', 'stock', 'min_stock_level']),
+            'stocks' => $product->productStocks,
+        ], 'Detail stok produk berhasil diambil');
+    }
+
+    public function stockCard($id, Request $request)
+    {
+        $product = Product::query()
+            ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+            ->findOrFail($id);
+
+        $query = StockMutation::query()
+            ->with([
+                'warehouse:id,name',
+                'warehouseLocation:id,warehouse_id,code,name',
+                'fromWarehouse:id,name',
+                'toWarehouse:id,name',
+                'user:id,name',
+                'approver:id,name',
+            ])
+            ->where('product_id', $product->id);
+
+        if ($request->filled('warehouse_id')) {
+            $query->where('warehouse_id', $request->integer('warehouse_id'));
+        }
+
+        $mutations = $query
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function (StockMutation $mutation) {
+                $changeQty = $mutation->type === 'in' ? $mutation->quantity : -$mutation->quantity;
+
+                return [
+                    'id' => $mutation->id,
+                    'reference_number' => $mutation->reference_number,
+                    'transfer_id' => $mutation->transfer_id,
+                    'mutation_source' => $mutation->mutation_source,
+                    'type' => $mutation->type,
+                    'status' => $mutation->status,
+                    'reason' => $mutation->reason,
+                    'note' => $mutation->note,
+                    'before_qty' => $mutation->before_qty,
+                    'change_qty' => $changeQty,
+                    'after_qty' => $mutation->after_qty,
+                    'warehouse' => $mutation->warehouse?->only(['id', 'name']),
+                    'warehouse_location' => $mutation->warehouseLocation?->only(['id', 'code', 'name']),
+                    'from_warehouse' => $mutation->fromWarehouse?->only(['id', 'name']),
+                    'to_warehouse' => $mutation->toWarehouse?->only(['id', 'name']),
+                    'created_by' => $mutation->user?->only(['id', 'name']),
+                    'approved_by' => $mutation->approver?->only(['id', 'name']),
+                    'created_at' => optional($mutation->created_at)->toDateTimeString(),
+                ];
+            });
+
+        return $this->successResponse([
+            'product' => $product,
+            'stock_card' => $mutations,
+        ], 'Kartu stok produk berhasil diambil');
     }
 }

@@ -2,41 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Database\QueryException; // <-- Tambahkan ini
+use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => Category::query()
-                ->select(['id', 'name'])
-                ->latest()
-                ->get()
-        ]);
+        $categories = Category::query()
+            ->select(['id', 'name'])
+            ->latest()
+            ->get();
+
+        return $this->successResponse($categories, 'Data kategori berhasil diambil');
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $request->validate(['name' => 'required|string|unique:categories,name']);
-        Category::create(['name' => $request->name]);
-        return response()->json(['status' => 'success', 'message' => 'Kategori berhasil ditambahkan']);
+        Category::create($request->validated());
+
+        return $this->successResponse(null, 'Kategori berhasil ditambahkan', 201);
     }
 
     public function destroy($id)
     {
         try {
-            Category::destroy($id);
-            return response()->json(['status' => 'success', 'message' => 'Kategori dihapus']);
+            $category = Category::findOrFail($id);
+            $category->delete();
+
+            return $this->successResponse(null, 'Kategori berhasil dihapus');
         } catch (QueryException $e) {
-            // Menangkap error jika kategori masih dipakai oleh produk
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal menghapus! Kategori ini sedang digunakan oleh produk di gudang.'
-            ], 400);
+            return $this->errorResponse('Gagal menghapus. Kategori ini masih digunakan oleh produk.', 400);
         }
     }
 }
