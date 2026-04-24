@@ -28,7 +28,7 @@ Catatan: project ini **tidak wajib** menggunakan Docker.
 ### 1. Clone repository
 
 ```bash
-git clone <repository-url>
+git clone <https://github.com/suryaadiarga/warehouseBallqish.git>
 cd warehouseBallqish
 ```
 
