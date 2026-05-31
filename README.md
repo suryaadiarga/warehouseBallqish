@@ -28,7 +28,12 @@ Catatan: project ini **tidak wajib** menggunakan Docker.
 ### 1. Clone repository
 
 ```bash
-git clone <https://github.com/suryaadiarga/warehouseBallqish.git>
+git clone https://github.com/suryaadiarga/warehouseBallqish.git
+```
+
+Masuk ke project:
+
+```bash
 cd warehouseBallqish
 ```
 
@@ -46,8 +51,15 @@ Install dependencies:
 composer install
 ```
 
+Generate key:
+
+```bash
+php artisan key:generate
+```
+
 #### Setup database
 **MySQL/MariaDB**
+**Pastikan file .env.example yang ada di backendBallqish diubah ke .env**
 
 Buat database kosong (misal `warehouse_ballqish`), lalu set `.env`:
 
@@ -69,23 +81,29 @@ php artisan db:seed
 
 ### 3. Jalankan backend API
 
-Jalankan backend di port **8000** (sesuai default frontend):
+Jalankan backend di port **8080** (sesuai default frontend):
 
 ```bash
-php artisan serve --port=8000
+php artisan serve --port=8080
 ```
 
 Backend API tersedia di:
 
-http://localhost:8000/api
+http://localhost:8080/api
 
 ### 4. Setup & jalankan frontend (Next.js)
 
 Buka terminal baru dari root repo, lalu:
 
+Masuk ke folder frontend:
 ```bash
 cd frontendBallqish
+```
+
+Install dependencies:
+```bash
 npm install
+```
 
 Jalankan development server:
 
@@ -126,7 +144,7 @@ Seeder utama menjalankan: `UserSeeder`, `CategorySeeder`, `WarehouseSeeder`, `Su
 
 | Command | Deskripsi |
 |---------|----------|
-| `php artisan serve --port=8000` | Menjalankan API server |
+| `php artisan serve --port=8080` | Menjalankan API server |
 | `php artisan queue:listen --tries=1` | Menjalankan queue worker (opsional) |
 | `composer run dev` | Menjalankan server + queue + Vite (opsional, 1 perintah) |
 | `composer run setup` | Install deps + copy env + generate key + migrate + build assets |
@@ -147,7 +165,7 @@ Seeder utama menjalankan: `UserSeeder`, `CategorySeeder`, `WarehouseSeeder`, `Su
 ## 🔧 Troubleshooting
 
 - **500 / APP_KEY error**: pastikan `.env` ada dan sudah `php artisan key:generate`.
-- **401 terus / gagal login**: pastikan `NEXT_PUBLIC_API_BASE_URL` mengarah ke backend yang sedang berjalan (contoh `http://localhost:8000/api`).
+- **401 terus / gagal login**: pastikan `NEXT_PUBLIC_API_BASE_URL` mengarah ke backend yang sedang berjalan (contoh `http://localhost:8080/api`).
 - **Error DB**: cek konfigurasi `.env` (DB_CONNECTION, DB_DATABASE/host/credential), lalu ulangi `php artisan migrate`.
 
 ---
