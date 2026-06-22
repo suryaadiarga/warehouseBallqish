@@ -19,6 +19,10 @@ type MovementItem = {
   current_stock: number;
   min_stock_level: number;
   avg_daily_usage: number;
+  forecast_daily_usage: number;
+  forecast_method: 'ewma' | 'croston_sba';
+  confidence_score: number;
+  critical_score: number;
   total_outbound_last_30_days: number;
   movement_count_last_30_days: number;
   estimated_days_until_stockout?: number | null;
@@ -67,9 +71,9 @@ export function MovementAnalysisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeItems = useMemo(() => items.filter((item) => item.avg_daily_usage > 0), [items]);
-  const fastMoving = useMemo(() => activeItems.slice(0, 5), [activeItems]);
-  const slowMoving = useMemo(() => [...activeItems].sort((a, b) => a.avg_daily_usage - b.avg_daily_usage).slice(0, 5), [activeItems]);
+  const activeItems = useMemo(() => items.filter((item) => item.forecast_daily_usage > 0), [items]);
+  const fastMoving = useMemo(() => [...activeItems].sort((a, b) => b.forecast_daily_usage - a.forecast_daily_usage).slice(0, 5), [activeItems]);
+  const slowMoving = useMemo(() => [...activeItems].sort((a, b) => a.forecast_daily_usage - b.forecast_daily_usage).slice(0, 5), [activeItems]);
   const selectedWarehouseName = warehouses.find((warehouse) => String(warehouse.id) === warehouseId)?.name ?? 'Semua gudang';
 
   if (loading) {
@@ -85,7 +89,7 @@ export function MovementAnalysisPage() {
       <PageHeader
         eyebrow="Smart Inventory"
         title="Movement Analysis"
-        description="Analisis pergerakan produk berdasarkan rata-rata pengeluaran 30 hari, siap dipakai untuk membaca fast moving dan slow moving item."
+        description="Forecast 90 hari menggunakan EWMA dan Croston/SBA untuk membaca fast moving, slow moving, serta risiko stockout."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -139,7 +143,7 @@ export function MovementAnalysisPage() {
                         <p className="font-semibold text-slate-900">#{index + 1} {item.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                       </div>
-                      <p className="text-lg font-black text-emerald-700">{item.avg_daily_usage}</p>
+                      <p className="text-lg font-black text-emerald-700">{item.forecast_daily_usage}</p>
                     </div>
                   ))}
                 </div>
@@ -162,7 +166,7 @@ export function MovementAnalysisPage() {
                         <p className="font-semibold text-slate-900">#{index + 1} {item.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                       </div>
-                      <p className="text-lg font-black text-amber-700">{item.avg_daily_usage}</p>
+                      <p className="text-lg font-black text-amber-700">{item.forecast_daily_usage}</p>
                     </div>
                   ))}
                 </div>
@@ -175,7 +179,7 @@ export function MovementAnalysisPage() {
                   <tr>
                     <th className="px-6 py-4">Rank</th>
                     <th className="px-6 py-4">Produk</th>
-                    <th className="px-6 py-4">Avg Usage</th>
+                    <th className="px-6 py-4">Forecast</th>
                     <th className="px-6 py-4">Outbound 30 Hari</th>
                     <th className="px-6 py-4">Stockout</th>
                     <th className="px-6 py-4">Status</th>
@@ -189,7 +193,7 @@ export function MovementAnalysisPage() {
                         <p className="font-semibold text-slate-900">{item.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                       </td>
-                      <td className="px-6 py-4 font-black text-slate-900">{item.avg_daily_usage}</td>
+                      <td className="px-6 py-4 font-black text-slate-900">{item.forecast_daily_usage}<span className="mt-1 block text-xs font-normal text-slate-500">{item.forecast_method === 'croston_sba' ? 'Croston/SBA' : 'EWMA'} · {item.confidence_score}%</span></td>
                       <td className="px-6 py-4 text-slate-700">
                         <p>{item.total_outbound_last_30_days}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.movement_count_last_30_days} movement</p>

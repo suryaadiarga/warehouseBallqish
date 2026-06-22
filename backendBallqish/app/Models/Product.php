@@ -15,6 +15,8 @@ class Product extends Model
         'name',
         'stock',
         'min_stock_level',
+        'lead_time_days',
+        'safety_stock',
         'price',
     ];
 

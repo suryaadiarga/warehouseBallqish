@@ -21,6 +21,8 @@ type Product = {
   name: string;
   stock: number;
   min_stock_level: number;
+  lead_time_days: number;
+  safety_stock: number;
   price?: number;
   category?: Category;
 };
@@ -50,6 +52,8 @@ export function ProductManagement() {
     sku: '',
     category_id: '',
     min_stock_level: '10',
+    lead_time_days: '7',
+    safety_stock: '10',
     price: '',
   });
 
@@ -91,6 +95,8 @@ export function ProductManagement() {
         ...form,
         category_id: Number(form.category_id),
         min_stock_level: Number(form.min_stock_level),
+        lead_time_days: Number(form.lead_time_days),
+        safety_stock: Number(form.safety_stock),
         price: Number(form.price),
       };
 
@@ -100,7 +106,7 @@ export function ProductManagement() {
         title: 'Produk ditambahkan',
         description: response.data.message,
       });
-      setForm({ name: '', sku: '', category_id: '', min_stock_level: '10', price: '' });
+      setForm({ name: '', sku: '', category_id: '', min_stock_level: '10', lead_time_days: '7', safety_stock: '10', price: '' });
       setShowForm(false);
       await loadData(1, '');
       setSearch('');
@@ -193,6 +199,14 @@ export function ProductManagement() {
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Harga</label>
               <input type="number" min={0} step={1} inputMode="numeric" placeholder="Masukkan harga" className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.price} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Lead Time Supplier (hari)</label>
+              <input type="number" min={1} max={365} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.lead_time_days} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, lead_time_days: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Safety Stock</label>
+              <input type="number" min={0} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.safety_stock} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, safety_stock: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div className="md:col-span-2 xl:col-span-3">
               <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
