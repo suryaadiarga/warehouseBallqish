@@ -12,14 +12,34 @@ class InventoryAnalyticsService
     public function buildProductAnalysis(Product $product, ?int $warehouseId = null, int $lookbackDays = 30): array
     {
         $currentStock = $warehouseId
-            ? (int) $product->productStocks->where('warehouse_id', $warehouseId)->sum('quantity')
+            ? (int) ($product->relationLoaded('productStocks')
+                ? $product->productStocks->where('warehouse_id', $warehouseId)->sum('quantity')
+                : $product->productStocks()->where('warehouse_id', $warehouseId)->sum('quantity'))
             : (int) $product->stock;
 
-        $outboundQuery = $this->approvedOutboundQuery($warehouseId, $lookbackDays)
-            ->where('product_id', $product->id);
+        $movement = $this->approvedOutboundQuery($warehouseId, $lookbackDays)
+            ->where('product_id', $product->id)
+            ->selectRaw('COALESCE(SUM(quantity), 0) as total_outbound, COUNT(*) as movement_count')
+            ->first();
 
-        $totalOutbound = (int) (clone $outboundQuery)->sum('quantity');
-        $movementCount = (int) (clone $outboundQuery)->count();
+        return $this->formatProductAnalysis(
+            $product,
+            $warehouseId,
+            $lookbackDays,
+            $currentStock,
+            (int) ($movement->total_outbound ?? 0),
+            (int) ($movement->movement_count ?? 0),
+        );
+    }
+
+    private function formatProductAnalysis(
+        Product $product,
+        ?int $warehouseId,
+        int $lookbackDays,
+        int $currentStock,
+        int $totalOutbound,
+        int $movementCount,
+    ): array {
         $avgDailyUsage = round($totalOutbound / max($lookbackDays, 1), 2);
         $estimatedDaysUntilStockout = $avgDailyUsage > 0
             ? round($currentStock / $avgDailyUsage, 1)
@@ -52,13 +72,43 @@ class InventoryAnalyticsService
 
     public function buildMovementAnalysis(?int $warehouseId = null, int $lookbackDays = 30): Collection
     {
-        $products = Product::query()
+        $productsQuery = Product::query()
             ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level'])
-            ->with(['category:id,name', 'productStocks'])
-            ->get();
+            ->with('category:id,name');
+
+        if ($warehouseId) {
+            $productsQuery->withSum(
+                ['productStocks as selected_warehouse_stock' => fn (Builder $query) => $query->where('warehouse_id', $warehouseId)],
+                'quantity'
+            );
+        }
+
+        $products = $productsQuery->get();
+
+        $movementStats = $this->approvedOutboundQuery($warehouseId, $lookbackDays)
+            ->select('product_id')
+            ->selectRaw('COALESCE(SUM(quantity), 0) as total_outbound')
+            ->selectRaw('COUNT(*) as movement_count')
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
 
         return $products
-            ->map(fn (Product $product) => $this->buildProductAnalysis($product, $warehouseId, $lookbackDays))
+            ->map(function (Product $product) use ($warehouseId, $lookbackDays, $movementStats) {
+                $movement = $movementStats->get($product->id);
+                $currentStock = $warehouseId
+                    ? (int) ($product->getAttribute('selected_warehouse_stock') ?? 0)
+                    : (int) $product->stock;
+
+                return $this->formatProductAnalysis(
+                    $product,
+                    $warehouseId,
+                    $lookbackDays,
+                    $currentStock,
+                    (int) ($movement->total_outbound ?? 0),
+                    (int) ($movement->movement_count ?? 0),
+                );
+            })
             ->sortByDesc('avg_daily_usage')
             ->values();
     }
