@@ -13,8 +13,41 @@ use Illuminate\Support\Str;
 
 class StockMutationService
 {
+    public function createApprovedSystemMutation(array $data, int $userId): StockMutation
+    {
+        $mutation = StockMutation::create([
+            'product_id' => $data['product_id'],
+            'warehouse_id' => $data['warehouse_id'],
+            'warehouse_location_id' => $data['warehouse_location_id'],
+            'from_warehouse_id' => $data['type'] === 'out' ? $data['warehouse_id'] : null,
+            'to_warehouse_id' => $data['type'] === 'in' ? $data['warehouse_id'] : null,
+            'user_id' => $userId,
+            'approved_by' => $userId,
+            'reference_number' => $data['reference_number'] ?? $this->generateReferenceNumber('AUTO'),
+            'mutation_source' => $data['mutation_source'],
+            'type' => $data['type'],
+            'quantity' => $data['quantity'],
+            'status' => 'draft',
+            'note' => $data['note'] ?? null,
+            'reason' => $data['reason'],
+        ]);
+
+        $this->applyApprovedMutation($mutation, $userId);
+
+        return $mutation->fresh(['product:id,name,sku', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
+    }
+
     public function createDraft(array $data, int $userId)
     {
+        if (($data['warehouse_id'] ?? null) && ! ($data['warehouse_location_id'] ?? null)) {
+            $data['warehouse_location_id'] = $this->selectAutomaticLocation(
+                $data['product_id'],
+                $data['warehouse_id'],
+                $data['type'],
+                $data['quantity']
+            );
+        }
+
         $data['user_id'] = $userId;
         $data['status'] = 'draft';
         $data['mutation_source'] = $data['mutation_source'] ?? 'manual';
@@ -53,13 +86,24 @@ class StockMutationService
         $this->assertPrivilegedRole($userRole);
 
         return DB::transaction(function () use ($data, $userId) {
-            $transferId = 'TRF-' . Str::upper(Str::random(10));
+            $transferId = 'TRF-'.Str::upper(Str::random(10));
             $note = $data['note'] ?? null;
+            $fromLocationId = $data['from_warehouse_location_id'] ?? $this->selectAutomaticLocation(
+                $data['product_id'], $data['from_warehouse_id'], 'out', $data['quantity']
+            );
+            $toLocationId = $data['to_warehouse_location_id'] ?? $this->selectAutomaticLocation(
+                $data['product_id'], $data['to_warehouse_id'], 'in', $data['quantity'],
+                $data['from_warehouse_id'] === $data['to_warehouse_id'] ? $fromLocationId : null
+            );
+
+            if ($data['from_warehouse_id'] === $data['to_warehouse_id'] && $fromLocationId === $toLocationId) {
+                throw new Exception('Rak asal dan tujuan transfer harus berbeda.', 422);
+            }
 
             $outMutation = StockMutation::create([
                 'product_id' => $data['product_id'],
                 'warehouse_id' => $data['from_warehouse_id'],
-                'warehouse_location_id' => $data['from_warehouse_location_id'] ?? null,
+                'warehouse_location_id' => $fromLocationId,
                 'from_warehouse_id' => $data['from_warehouse_id'],
                 'to_warehouse_id' => $data['to_warehouse_id'],
                 'user_id' => $userId,
@@ -79,7 +123,7 @@ class StockMutationService
             $inMutation = StockMutation::create([
                 'product_id' => $data['product_id'],
                 'warehouse_id' => $data['to_warehouse_id'],
-                'warehouse_location_id' => $data['to_warehouse_location_id'] ?? null,
+                'warehouse_location_id' => $toLocationId,
                 'from_warehouse_id' => $data['from_warehouse_id'],
                 'to_warehouse_id' => $data['to_warehouse_id'],
                 'user_id' => $userId,
@@ -111,10 +155,20 @@ class StockMutationService
         $this->assertPrivilegedRole($userRole);
 
         return DB::transaction(function () use ($data, $userId) {
+            $locationId = $data['warehouse_location_id'] ?? null;
+            if (($data['warehouse_id'] ?? null) && ! $locationId) {
+                $locationId = $this->selectAutomaticLocation(
+                    $data['product_id'],
+                    $data['warehouse_id'],
+                    $data['type'] === 'increase' ? 'in' : 'out',
+                    $data['quantity']
+                );
+            }
+
             $mutation = StockMutation::create([
                 'product_id' => $data['product_id'],
                 'warehouse_id' => $data['warehouse_id'] ?? null,
-                'warehouse_location_id' => $data['warehouse_location_id'] ?? null,
+                'warehouse_location_id' => $locationId,
                 'from_warehouse_id' => $data['type'] === 'decrease' ? ($data['warehouse_id'] ?? null) : null,
                 'to_warehouse_id' => $data['type'] === 'increase' ? ($data['warehouse_id'] ?? null) : null,
                 'user_id' => $userId,
@@ -242,7 +296,7 @@ class StockMutationService
 
     private function applyWarehouseStockMutation(StockMutation $mutation): void
     {
-        if (!$mutation->warehouse_id) {
+        if (! $mutation->warehouse_id) {
             return;
         }
 
@@ -253,7 +307,7 @@ class StockMutationService
             ->lockForUpdate()
             ->first();
 
-        if (!$stock) {
+        if (! $stock) {
             $stock = ProductStock::create([
                 'product_id' => $mutation->product_id,
                 'warehouse_id' => $mutation->warehouse_id,
@@ -278,6 +332,7 @@ class StockMutationService
     {
         if ($type === 'in') {
             $product->increment('stock', $quantity);
+
             return;
         }
 
@@ -290,7 +345,7 @@ class StockMutationService
 
     private function getMutationScopeQuantity(int $productId, ?int $warehouseId, ?int $warehouseLocationId, int $fallbackQuantity): int
     {
-        if (!$warehouseId) {
+        if (! $warehouseId) {
             return $fallbackQuantity;
         }
 
@@ -300,6 +355,52 @@ class StockMutationService
             ->where('warehouse_location_id', $warehouseLocationId)
             ->lockForUpdate()
             ->value('quantity') ?? 0;
+    }
+
+    private function selectAutomaticLocation(int $productId, int $warehouseId, string $direction, int $quantity, ?int $excludeLocationId = null): int
+    {
+        if ($direction === 'out') {
+            $locationId = ProductStock::query()
+                ->where('product_id', $productId)
+                ->where('warehouse_id', $warehouseId)
+                ->whereNotNull('warehouse_location_id')
+                ->where('quantity', '>=', $quantity)
+                ->when($excludeLocationId, fn ($query) => $query->where('warehouse_location_id', '!=', $excludeLocationId))
+                ->orderByDesc('quantity')
+                ->value('warehouse_location_id');
+
+            if (! $locationId) {
+                throw new Exception('Tidak ada satu rak dengan stok yang mencukupi.', 422);
+            }
+
+            return (int) $locationId;
+        }
+
+        $product = Product::query()->findOrFail($productId);
+        $locations = WarehouseLocation::query()
+            ->with('categories:id')
+            ->withSum('productStocks as used_capacity', 'quantity')
+            ->where('warehouse_id', $warehouseId)
+            ->where('status', 'active')
+            ->when($excludeLocationId, fn ($query) => $query->where('id', '!=', $excludeLocationId))
+            ->get();
+
+        $selected = $locations->map(function (WarehouseLocation $location) use ($product, $quantity) {
+            $used = (int) ($location->used_capacity ?? 0);
+            $categoryIds = $location->categories->pluck('id');
+            $compatible = $categoryIds->isEmpty() || $categoryIds->contains($product->category_id);
+            $available = $location->capacity === null ? PHP_INT_MAX : $location->capacity - $used;
+
+            return $compatible && $available >= $quantity
+                ? ['id' => $location->id, 'available' => $available]
+                : null;
+        })->filter()->sortByDesc('available')->first();
+
+        if (! $selected) {
+            throw new Exception('Tidak ada rak aktif yang sesuai kategori dan kapasitas.', 422);
+        }
+
+        return (int) $selected['id'];
     }
 
     private function getWarehouseTotalStock(int $productId, int $warehouseId): int
@@ -312,11 +413,11 @@ class StockMutationService
 
     private function ensureValidWarehouseLocationPair(?int $warehouseId, ?int $locationId): void
     {
-        if (!$locationId) {
+        if (! $locationId) {
             return;
         }
 
-        if (!$warehouseId) {
+        if (! $warehouseId) {
             throw new Exception('Warehouse harus dipilih jika lokasi gudang digunakan.', 422);
         }
 
@@ -325,7 +426,7 @@ class StockMutationService
             ->where('warehouse_id', $warehouseId)
             ->exists();
 
-        if (!$valid) {
+        if (! $valid) {
             throw new Exception('Lokasi gudang tidak sesuai dengan warehouse yang dipilih.', 422);
         }
     }
@@ -334,13 +435,13 @@ class StockMutationService
     {
         $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
 
-        if (!in_array($userRole, $allowedRoles, true)) {
+        if (! in_array($userRole, $allowedRoles, true)) {
             throw new Exception('Hanya Admin Gudang atau Super Admin yang memiliki otoritas.', 403);
         }
     }
 
     private function generateReferenceNumber(string $prefix): string
     {
-        return $prefix . '-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
+        return $prefix.'-'.now()->format('YmdHis').'-'.Str::upper(Str::random(6));
     }
 }

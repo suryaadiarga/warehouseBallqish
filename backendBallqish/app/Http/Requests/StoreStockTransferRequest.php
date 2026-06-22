@@ -17,7 +17,7 @@ class StoreStockTransferRequest extends FormRequest
     {
         return [
             'product_id' => ['required', 'exists:products,id'],
-            'from_warehouse_id' => ['required', 'exists:warehouses,id', 'different:to_warehouse_id'],
+            'from_warehouse_id' => ['required', 'exists:warehouses,id'],
             'to_warehouse_id' => ['required', 'exists:warehouses,id'],
             'from_warehouse_location_id' => ['nullable', 'exists:warehouse_locations,id'],
             'to_warehouse_location_id' => ['nullable', 'exists:warehouse_locations,id'],

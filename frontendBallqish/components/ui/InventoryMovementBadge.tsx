@@ -19,6 +19,10 @@ export function InventoryMovementBadge({
     return <StatusBadge label="opname" tone="safe" />;
   }
 
+  if (source === 'stock_audit') {
+    return <StatusBadge label="audit stok" tone="safe" />;
+  }
+
   if (type === 'in') {
     return <StatusBadge label="in" tone="safe" />;
   }
