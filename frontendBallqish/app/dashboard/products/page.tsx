@@ -1,5 +1,5 @@
-import { ProductManagement } from '@/components/modules/master/ProductManagement';
+import { redirect } from 'next/navigation';
 
 export default function ProductsPage() {
-  return <ProductManagement />;
+  redirect('/dashboard/inventory?tab=products');
 }

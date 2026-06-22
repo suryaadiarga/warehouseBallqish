@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/warehouses', [WarehouseController::class, 'index']);
     Route::post('/warehouses', [WarehouseController::class, 'store']);
     Route::get('/warehouses/map', [WarehouseController::class, 'map']);
+    Route::get('/warehouses/{id}', [WarehouseController::class, 'show']);
     Route::put('/warehouses/{id}', [WarehouseController::class, 'update']);
     Route::delete('/warehouses/{id}', [WarehouseController::class, 'destroy']);
 

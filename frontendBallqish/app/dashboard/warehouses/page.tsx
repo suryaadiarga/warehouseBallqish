@@ -1,5 +1,5 @@
-import { WarehouseManagement } from '@/components/modules/master/WarehouseManagement';
+import { redirect } from 'next/navigation';
 
 export default function WarehousesPage() {
-  return <WarehouseManagement />;
+  redirect('/dashboard/warehouse-management?tab=warehouses');
 }

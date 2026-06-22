@@ -1,5 +1,5 @@
-import { MutationsPage } from '@/components/modules/inventory/MutationsPage';
+import { redirect } from 'next/navigation';
 
 export default function MutationsRoute() {
-  return <MutationsPage />;
+  redirect('/dashboard/operations?tab=mutations');
 }

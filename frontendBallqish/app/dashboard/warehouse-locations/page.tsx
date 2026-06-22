@@ -1,5 +1,5 @@
-import { WarehouseLocationManagement } from '@/components/modules/master/WarehouseLocationManagement';
+import { redirect } from 'next/navigation';
 
 export default function WarehouseLocationsPage() {
-  return <WarehouseLocationManagement />;
+  redirect('/dashboard/warehouse-management?tab=racks');
 }

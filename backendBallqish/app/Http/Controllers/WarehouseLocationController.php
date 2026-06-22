@@ -13,8 +13,22 @@ class WarehouseLocationController extends Controller
     public function index(Request $request)
     {
         $query = WarehouseLocation::query()
-            ->select(['id', 'warehouse_id', 'code', 'name', 'description', 'created_at'])
-            ->with(['warehouse:id,name']);
+            ->select([
+                'id',
+                'warehouse_id',
+                'code',
+                'name',
+                'zone',
+                'aisle',
+                'level',
+                'capacity',
+                'status',
+                'description',
+                'created_at',
+            ])
+            ->with(['warehouse:id,name', 'categories:id,name'])
+            ->withCount('productStocks as sku_count')
+            ->withSum('productStocks as total_quantity', 'quantity');
 
         if ($request->filled('warehouse_id')) {
             $query->where('warehouse_id', $request->integer('warehouse_id'));
@@ -27,7 +41,15 @@ class WarehouseLocationController extends Controller
 
     public function store(StoreWarehouseLocationRequest $request)
     {
-        $location = WarehouseLocation::create($request->validated())->load('warehouse:id,name');
+        $validated = $request->validated();
+        $categoryIds = $validated['category_ids'] ?? [];
+        unset($validated['category_ids']);
+
+        $location = WarehouseLocation::create($validated);
+        $location->categories()->sync($categoryIds);
+        $location->load(['warehouse:id,name', 'categories:id,name']);
+        $location->loadCount('productStocks as sku_count');
+        $location->loadSum('productStocks as total_quantity', 'quantity');
 
         return $this->successResponse($location, 'Lokasi gudang berhasil ditambahkan', 201);
     }
@@ -35,10 +57,19 @@ class WarehouseLocationController extends Controller
     public function update(StoreWarehouseLocationRequest $request, $id)
     {
         $location = WarehouseLocation::findOrFail($id);
-        $location->update($request->validated());
+        $validated = $request->validated();
+        $categoryIds = $validated['category_ids'] ?? [];
+        unset($validated['category_ids']);
+
+        $location->update($validated);
+        $location->categories()->sync($categoryIds);
+
+        $location = $location->fresh(['warehouse:id,name', 'categories:id,name']);
+        $location->loadCount('productStocks as sku_count');
+        $location->loadSum('productStocks as total_quantity', 'quantity');
 
         return $this->successResponse(
-            $location->fresh('warehouse:id,name'),
+            $location,
             'Lokasi gudang berhasil diperbarui'
         );
     }
