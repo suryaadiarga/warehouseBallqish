@@ -1,5 +1,5 @@
-import { StockAlertsPage } from '@/components/modules/analytics/StockAlertsPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardStockAlertsPage() {
-  return <StockAlertsPage />;
+  redirect('/dashboard/analytics?tab=alerts');
 }

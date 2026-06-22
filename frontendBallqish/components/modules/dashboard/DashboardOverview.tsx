@@ -72,6 +72,35 @@ const summaryCards = [
   },
 ];
 
+let dashboardRequest: Promise<DashboardData> | null = null;
+let insightsRequest: Promise<DashboardInsights> | null = null;
+
+function fetchDashboard() {
+  if (!dashboardRequest) {
+    dashboardRequest = api
+      .get<ApiEnvelope<DashboardData>>('/dashboard')
+      .then((response) => response.data.data)
+      .finally(() => {
+        dashboardRequest = null;
+      });
+  }
+
+  return dashboardRequest;
+}
+
+function fetchInsights() {
+  if (!insightsRequest) {
+    insightsRequest = api
+      .get<ApiEnvelope<DashboardInsights>>('/dashboard/insights')
+      .then((response) => response.data.data)
+      .finally(() => {
+        insightsRequest = null;
+      });
+  }
+
+  return insightsRequest;
+}
+
 function InsightTable({
   title,
   description,
@@ -142,43 +171,40 @@ function InsightTable({
 export function DashboardOverview() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState('');
+  const [insightsError, setInsightsError] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError('');
+    let active = true;
 
-      try {
-        const [dashboardRes, insightsRes] = await Promise.all([
-          api.get<ApiEnvelope<DashboardData>>('/dashboard'),
-          api.get<ApiEnvelope<DashboardInsights>>('/dashboard/insights'),
-        ]);
+    void fetchDashboard()
+      .then((data) => {
+        if (active) setDashboard(data);
+      })
+      .catch((err: unknown) => {
+        if (active) setDashboardError(extractApiErrorMessage(err, 'Gagal memuat ringkasan dashboard.'));
+      })
+      .finally(() => {
+        if (active) setDashboardLoading(false);
+      });
 
-        setDashboard(dashboardRes.data.data);
-        setInsights(insightsRes.data.data);
-      } catch (err: unknown) {
-        setError(extractApiErrorMessage(err, 'Gagal memuat dashboard dari backend.'));
-      } finally {
-        setLoading(false);
-      }
+    void fetchInsights()
+      .then((data) => {
+        if (active) setInsights(data);
+      })
+      .catch((err: unknown) => {
+        if (active) setInsightsError(extractApiErrorMessage(err, 'Gagal memuat insight dashboard.'));
+      })
+      .finally(() => {
+        if (active) setInsightsLoading(false);
+      });
+
+    return () => {
+      active = false;
     };
-
-    void loadData();
   }, []);
-
-  if (loading) {
-    return <LoadingState title="Memuat dashboard" description="Mengambil summary dan insight WMS dari backend." />;
-  }
-
-  if (error) {
-    return <ErrorState title="Dashboard gagal dimuat" description={error} />;
-  }
-
-  if (!dashboard || !insights) {
-    return <EmptyState title="Dashboard belum siap" description="Data dashboard belum tersedia dari backend." />;
-  }
 
   return (
     <div className="space-y-6">
@@ -188,31 +214,44 @@ export function DashboardOverview() {
         description="Ringkasan gudang, insight stok kritis, dan tren pergerakan produk ditampilkan langsung dari endpoint analytics backend."
       />
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          const value = insights.summary[card.key as keyof DashboardInsights['summary']];
+      {insightsLoading ? (
+        <LoadingState title="Memuat insight stok" description="Menghitung status dan tren pergerakan produk." />
+      ) : insightsError ? (
+        <ErrorState title="Insight dashboard gagal dimuat" description={insightsError} />
+      ) : insights ? (
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {summaryCards.map((card) => {
+            const Icon = card.icon;
+            const value = insights.summary[card.key as keyof DashboardInsights['summary']];
 
-          return (
-            <div key={card.key} className="surface-card rounded-[28px] p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
-                  <p className="mt-3 text-4xl font-black text-slate-950">{value}</p>
+            return (
+              <div key={card.key} className="surface-card rounded-[28px] p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
+                    <p className="mt-3 text-4xl font-black text-slate-950">{value}</p>
+                  </div>
+                  <div className={`rounded-2xl p-3 ${card.tone === 'safe' ? 'bg-emerald-50 text-emerald-600' : card.tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <Icon size={22} />
+                  </div>
                 </div>
-                <div className={`rounded-2xl p-3 ${card.tone === 'safe' ? 'bg-emerald-50 text-emerald-600' : card.tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
-                  <Icon size={22} />
+                <div className="mt-4">
+                  <StatusBadge label={card.tone} tone={card.tone} />
                 </div>
               </div>
-              <div className="mt-4">
-                <StatusBadge label={card.tone} tone={card.tone} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyState title="Insight belum tersedia" description="Backend belum mengembalikan data insight." />
+      )}
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      {dashboardLoading ? (
+        <LoadingState title="Memuat ringkasan operasional" description="Mengambil total produk dan mutasi hari ini." />
+      ) : dashboardError ? (
+        <ErrorState title="Ringkasan dashboard gagal dimuat" description={dashboardError} />
+      ) : dashboard ? (
+        <div className="grid gap-5 xl:grid-cols-3">
         <div className="surface-card rounded-[28px] p-6">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
@@ -246,26 +285,31 @@ export function DashboardOverview() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      ) : (
+        <EmptyState title="Ringkasan belum tersedia" description="Backend belum mengembalikan ringkasan dashboard." />
+      )}
 
-      <InsightTable
-        title="Critical Products"
-        description="Produk yang perlu perhatian cepat berdasarkan aturan stok minimum dan prediksi kehabisan."
-        items={insights.critical_products}
-      />
+      {insights ? <>
+        <InsightTable
+          title="Critical Products"
+          description="Produk yang perlu perhatian cepat berdasarkan aturan stok minimum dan prediksi kehabisan."
+          items={insights.critical_products}
+        />
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <InsightTable
-          title="Fast Moving Products"
-          description="Produk dengan rata-rata pengeluaran tertinggi pada periode analisis backend."
-          items={insights.fast_moving_products}
-        />
-        <InsightTable
-          title="Slow Moving Products"
-          description="Produk yang tetap bergerak, tetapi dengan usage harian paling rendah."
-          items={insights.slow_moving_products}
-        />
-      </div>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <InsightTable
+            title="Fast Moving Products"
+            description="Produk dengan rata-rata pengeluaran tertinggi pada periode analisis backend."
+            items={insights.fast_moving_products}
+          />
+          <InsightTable
+            title="Slow Moving Products"
+            description="Produk yang tetap bergerak, tetapi dengan usage harian paling rendah."
+            items={insights.slow_moving_products}
+          />
+        </div>
+      </> : null}
     </div>
   );
 }

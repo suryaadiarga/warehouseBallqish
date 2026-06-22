@@ -25,7 +25,14 @@ class StoreWarehouseLocationRequest extends FormRequest
                 )->ignore($this->route('id')),
             ],
             'name' => ['required', 'string', 'max:255'],
+            'zone' => ['nullable', 'string', 'max:50'],
+            'aisle' => ['nullable', 'string', 'max:50'],
+            'level' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'capacity' => ['nullable', 'integer', 'min:1'],
+            'status' => ['sometimes', Rule::in(['active', 'inactive', 'maintenance'])],
             'description' => ['nullable', 'string'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['integer', 'distinct', 'exists:categories,id'],
         ];
     }
 }

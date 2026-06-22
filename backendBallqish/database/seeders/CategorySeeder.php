@@ -2,22 +2,21 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Category;
+use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
 {
     public function run(): void
     {
         $categories = [
+            ['name' => 'Sistem Pengereman'],
             ['name' => 'Suku Cadang Mesin'],
             ['name' => 'Kelistrikan'],
             ['name' => 'Ban & Velg'],
             ['name' => 'Pelumas & Cairan'],
             ['name' => 'Aksesoris Kendaraan'],
             ['name' => 'Peralatan Bengkel'],
-            ['name' => 'Fast Moving Parts'],
-            ['name' => 'Slow Moving Parts'],
         ];
 
         foreach ($categories as $category) {

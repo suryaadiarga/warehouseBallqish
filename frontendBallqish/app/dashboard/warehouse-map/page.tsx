@@ -1,5 +1,5 @@
-import { WarehouseMapPage } from '@/components/modules/map/WarehouseMapPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardWarehouseMapPage() {
-  return <WarehouseMapPage />;
+  redirect('/dashboard/warehouse-management?tab=map');
 }

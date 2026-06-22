@@ -1,5 +1,5 @@
-import { MovementAnalysisPage } from '@/components/modules/analytics/MovementAnalysisPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardMovementAnalysisPage() {
-  return <MovementAnalysisPage />;
+  redirect('/dashboard/analytics?tab=movement');
 }

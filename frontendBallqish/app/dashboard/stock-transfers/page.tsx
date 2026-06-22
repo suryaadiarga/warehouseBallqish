@@ -1,5 +1,5 @@
-import { StockTransfersPage } from '@/components/modules/operations/StockTransfersPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardStockTransfersPage() {
-  return <StockTransfersPage />;
+  redirect('/dashboard/operations?tab=transfers');
 }
