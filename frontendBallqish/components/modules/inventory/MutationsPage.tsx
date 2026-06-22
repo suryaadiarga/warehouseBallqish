@@ -76,7 +76,7 @@ export function MutationsPage() {
     try {
       const [mutationRes, productRes, warehouseRes, locationRes] = await Promise.all([
         api.get<ApiEnvelope<MutationItem[]>>('/reports/mutations'),
-        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 100 } }),
+        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 1000 } }),
         api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
         api.get<ApiEnvelope<WarehouseLocationOption[]>>('/warehouse-locations'),
       ]);

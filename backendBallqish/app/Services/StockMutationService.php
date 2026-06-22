@@ -264,6 +264,9 @@ class StockMutationService
         $this->ensureValidWarehouseLocationPair($mutation->warehouse_id, $mutation->warehouse_location_id);
 
         $product = Product::query()->lockForUpdate()->findOrFail($mutation->product_id);
+        if ($mutation->type === 'in' && $mutation->warehouse_location_id) {
+            $this->ensureInboundLocationAcceptsProduct($product, $mutation->warehouse_location_id, $mutation->quantity);
+        }
         $beforeQty = $this->getMutationScopeQuantity(
             $mutation->product_id,
             $mutation->warehouse_id,
@@ -428,6 +431,26 @@ class StockMutationService
 
         if (! $valid) {
             throw new Exception('Lokasi gudang tidak sesuai dengan warehouse yang dipilih.', 422);
+        }
+    }
+
+    private function ensureInboundLocationAcceptsProduct(Product $product, int $locationId, int $quantity): void
+    {
+        $location = WarehouseLocation::query()
+            ->with('categories:id')
+            ->withSum('productStocks as used_capacity', 'quantity')
+            ->findOrFail($locationId);
+
+        if ($location->status !== 'active') {
+            throw new Exception('Rak tujuan sedang tidak aktif.', 422);
+        }
+
+        if ($location->categories->isNotEmpty() && ! $location->categories->contains('id', $product->category_id)) {
+            throw new Exception('Kategori produk tidak diizinkan pada rak tujuan.', 422);
+        }
+
+        if ($location->capacity !== null && ((int) ($location->used_capacity ?? 0) + $quantity) > $location->capacity) {
+            throw new Exception('Kapasitas rak tujuan tidak mencukupi.', 422);
         }
     }
 

@@ -68,7 +68,7 @@ export function ProductStocksPage() {
           },
         }),
         api.get<ApiEnvelope<ProductOption[]>>('/products', {
-          params: { per_page: 100 },
+          params: { per_page: 1000 },
         }),
         api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
       ]);

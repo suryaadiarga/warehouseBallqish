@@ -80,6 +80,26 @@ class ExistingWorkflowAutomationTest extends TestCase
         $this->assertDatabaseHas('stock_mutations', ['mutation_source' => 'stock_audit', 'quantity' => 2, 'status' => 'approved']);
     }
 
+    public function test_inbound_rejects_rack_from_another_category(): void
+    {
+        [$user, $product, $warehouse] = $this->fixture();
+        $otherCategory = Category::create(['name' => 'Kelistrikan']);
+        $wrongRack = WarehouseLocation::create(['warehouse_id' => $warehouse->id, 'code' => 'C1', 'name' => 'Rak Kelistrikan', 'capacity' => 100, 'status' => 'active']);
+        $wrongRack->categories()->attach($otherCategory->id);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Kategori produk tidak diizinkan pada rak tujuan.');
+
+        app(StockMutationService::class)->createAdjustment([
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'warehouse_location_id' => $wrongRack->id,
+            'type' => 'increase',
+            'quantity' => 1,
+            'reason' => 'Uji kategori',
+        ], $user->id, $user->role);
+    }
+
     private function fixture(): array
     {
         $user = User::factory()->create(['role' => 'admin_gudang']);
