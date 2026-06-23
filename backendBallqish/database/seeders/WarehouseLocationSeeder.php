@@ -12,48 +12,77 @@ class WarehouseLocationSeeder extends Seeder
     public function run(): void
     {
         $allCategoryIds = Category::query()->pluck('id')->all();
-
-        $racks = [
-            'Gudang Pusat' => [
-                ['code' => 'A1', 'name' => 'Rak Sistem Pengereman', 'zone' => 'A', 'aisle' => 'Komponen Kendaraan', 'level' => 1, 'capacity' => 45000, 'categories' => ['Sistem Pengereman']],
-                ['code' => 'A2', 'name' => 'Rak Aksesori Kendaraan', 'zone' => 'A', 'aisle' => 'Komponen Kendaraan', 'level' => 1, 'capacity' => 25000, 'categories' => ['Aksesoris Kendaraan']],
-                ['code' => 'B1', 'name' => 'Rak Suku Cadang Mesin', 'zone' => 'B', 'aisle' => 'Mesin dan Kelistrikan', 'level' => 1, 'capacity' => 220000, 'categories' => ['Suku Cadang Mesin']],
-                ['code' => 'B2', 'name' => 'Rak Kelistrikan', 'zone' => 'B', 'aisle' => 'Mesin dan Kelistrikan', 'level' => 2, 'capacity' => 130000, 'categories' => ['Kelistrikan']],
-                ['code' => 'C1', 'name' => 'Area Ban dan Velg', 'zone' => 'C', 'aisle' => 'Barang Berukuran Besar', 'level' => 1, 'capacity' => 70000, 'categories' => ['Ban & Velg']],
-                ['code' => 'D1', 'name' => 'Rak Pelumas dan Cairan', 'zone' => 'D', 'aisle' => 'Cairan', 'level' => 1, 'capacity' => 70000, 'categories' => ['Pelumas & Cairan']],
-                ['code' => 'E1', 'name' => 'Rak Peralatan Bengkel', 'zone' => 'E', 'aisle' => 'Peralatan', 'level' => 1, 'capacity' => 30000, 'categories' => ['Peralatan Bengkel']],
-            ],
-            'Gudang Transit' => [
-                ['code' => 'T1', 'name' => 'Barang Masuk', 'zone' => 'T', 'aisle' => 'Inbound', 'level' => 1, 'capacity' => 100000, 'categories' => null],
-                ['code' => 'T2', 'name' => 'Menunggu Pemeriksaan', 'zone' => 'T', 'aisle' => 'Quality Check', 'level' => 1, 'capacity' => 80000, 'categories' => null],
-                ['code' => 'T3', 'name' => 'Siap Transfer', 'zone' => 'T', 'aisle' => 'Outbound', 'level' => 1, 'capacity' => 90000, 'categories' => null],
-                ['code' => 'T4', 'name' => 'Barang Bermasalah', 'zone' => 'T', 'aisle' => 'Quarantine', 'level' => 1, 'capacity' => 30000, 'categories' => null],
-            ],
+        $central = Warehouse::query()->where('name', 'Gudang Pusat')->firstOrFail();
+        $rackGroups = [
+            'Sistem Pengereman' => ['prefix' => 'A', 'label' => 'Sistem Pengereman', 'aisle' => 'Komponen Pengereman', 'capacity' => 12000],
+            'Suku Cadang Mesin' => ['prefix' => 'B', 'label' => 'Suku Cadang Mesin', 'aisle' => 'Komponen Mesin', 'capacity' => 50000],
+            'Kelistrikan' => ['prefix' => 'C', 'label' => 'Kelistrikan', 'aisle' => 'Komponen Kelistrikan', 'capacity' => 30000],
+            'Ban & Velg' => ['prefix' => 'D', 'label' => 'Ban dan Velg', 'aisle' => 'Barang Berukuran Besar', 'capacity' => 16000],
+            'Pelumas & Cairan' => ['prefix' => 'E', 'label' => 'Pelumas dan Cairan', 'aisle' => 'Cairan', 'capacity' => 16000],
+            'Aksesoris Kendaraan' => ['prefix' => 'F', 'label' => 'Aksesoris Kendaraan', 'aisle' => 'Aksesoris', 'capacity' => 6000],
+            'Peralatan Bengkel' => ['prefix' => 'G', 'label' => 'Peralatan Bengkel', 'aisle' => 'Peralatan', 'capacity' => 8000],
         ];
 
-        foreach ($racks as $warehouseName => $warehouseRacks) {
-            $warehouse = Warehouse::query()->where('name', $warehouseName)->firstOrFail();
+        $existingByCategory = [];
+        foreach (array_keys($rackGroups) as $categoryName) {
+            $existingByCategory[$categoryName] = WarehouseLocation::query()
+                ->where('warehouse_id', $central->id)
+                ->whereHas('categories', fn ($query) => $query->where('name', $categoryName))
+                ->withCount('productStocks')
+                ->orderByDesc('product_stocks_count')
+                ->orderBy('id')
+                ->take(5)
+                ->get()
+                ->values();
+        }
 
-            foreach ($warehouseRacks as $rack) {
-                $location = WarehouseLocation::query()->updateOrCreate(
-                    ['warehouse_id' => $warehouse->id, 'code' => $rack['code']],
-                    [
-                        'name' => $rack['name'],
-                        'zone' => $rack['zone'],
-                        'aisle' => $rack['aisle'],
-                        'level' => $rack['level'],
-                        'capacity' => $rack['capacity'],
-                        'status' => 'active',
-                        'description' => "Lokasi operasional {$rack['name']} di {$warehouseName}.",
-                    ]
-                );
+        WarehouseLocation::query()
+            ->where('warehouse_id', $central->id)
+            ->get()
+            ->each(fn (WarehouseLocation $location) => $location->update(['code' => 'TMP-'.$location->id]));
 
-                $categoryIds = $rack['categories'] === null
-                    ? $allCategoryIds
-                    : Category::query()->whereIn('name', $rack['categories'])->pluck('id')->all();
+        foreach ($rackGroups as $categoryName => $group) {
+            $category = Category::query()->where('name', $categoryName)->firstOrFail();
+            for ($number = 1; $number <= 5; $number++) {
+                $code = $group['prefix'].$number;
+                $location = $existingByCategory[$categoryName]->get($number - 1) ?? new WarehouseLocation;
+                if ($location->exists) {
+                    $location->refresh();
+                }
 
-                $location->categories()->sync($categoryIds);
+                $location->fill([
+                    'warehouse_id' => $central->id,
+                    'code' => $code,
+                    'name' => "Rak {$group['label']} {$code}",
+                    'zone' => $group['prefix'],
+                    'aisle' => $group['aisle'],
+                    'level' => $number,
+                    'capacity' => $group['capacity'],
+                    'status' => 'active',
+                    'description' => "Khusus kategori {$categoryName}; kapasitas {$group['capacity']} unit.",
+                ])->save();
+                $location->categories()->sync([$category->id]);
             }
+        }
+
+        WarehouseLocation::query()
+            ->where('warehouse_id', $central->id)
+            ->where('code', 'like', 'TMP-%')
+            ->update(['status' => 'inactive']);
+
+        $transit = Warehouse::query()->where('name', 'Gudang Transit')->firstOrFail();
+        $transitRacks = [
+            ['code' => 'T1', 'name' => 'Barang Masuk', 'aisle' => 'Inbound', 'capacity' => 100000],
+            ['code' => 'T2', 'name' => 'Menunggu Pemeriksaan', 'aisle' => 'Quality Check', 'capacity' => 80000],
+            ['code' => 'T3', 'name' => 'Siap Transfer', 'aisle' => 'Outbound', 'capacity' => 90000],
+            ['code' => 'T4', 'name' => 'Barang Bermasalah', 'aisle' => 'Quarantine', 'capacity' => 30000],
+        ];
+        foreach ($transitRacks as $rack) {
+            $location = WarehouseLocation::query()->updateOrCreate(
+                ['warehouse_id' => $transit->id, 'code' => $rack['code']],
+                ['name' => $rack['name'], 'zone' => 'T', 'aisle' => $rack['aisle'], 'level' => 1, 'capacity' => $rack['capacity'], 'status' => 'active', 'description' => "Area transit {$rack['name']}."],
+            );
+            $location->categories()->sync($allCategoryIds);
         }
     }
 }

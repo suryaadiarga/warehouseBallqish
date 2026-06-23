@@ -1,5 +1,5 @@
-import { StockOpnamesPage } from '@/components/modules/operations/StockOpnamesPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardStockOpnamesPage() {
-  return <StockOpnamesPage />;
+  redirect('/dashboard/stock-audits');
 }

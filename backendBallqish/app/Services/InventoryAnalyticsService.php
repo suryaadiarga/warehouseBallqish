@@ -40,12 +40,13 @@ class InventoryAnalyticsService
         int $totalOutbound,
         int $movementCount,
     ): array {
-        $avgDailyUsage = round($totalOutbound / max($lookbackDays, 1), 2);
-        $estimatedDaysUntilStockout = $avgDailyUsage > 0
-            ? round($currentStock / $avgDailyUsage, 1)
+        $rawAverageDailyUsage = $totalOutbound / max($lookbackDays, 1);
+        $avgDailyUsage = (int) round($rawAverageDailyUsage);
+        $estimatedDaysUntilStockout = $rawAverageDailyUsage > 0
+            ? (int) ceil($currentStock / $rawAverageDailyUsage)
             : null;
         $estimatedStockoutDate = $estimatedDaysUntilStockout !== null
-            ? now()->addDays((int) ceil($estimatedDaysUntilStockout))->toDateString()
+            ? now()->addDays($estimatedDaysUntilStockout)->toDateString()
             : null;
 
         $status = $this->resolveStatus($currentStock, (int) $product->min_stock_level, $avgDailyUsage, $estimatedDaysUntilStockout);
@@ -151,7 +152,7 @@ class InventoryAnalyticsService
             ->where('created_at', '>=', now()->subDays($lookbackDays));
     }
 
-    private function resolveStatus(int $currentStock, int $minStockLevel, float $avgDailyUsage, ?float $estimatedDaysUntilStockout): string
+    private function resolveStatus(int $currentStock, int $minStockLevel, int $avgDailyUsage, ?int $estimatedDaysUntilStockout): string
     {
         if ($currentStock <= 0) {
             return 'critical';
@@ -176,7 +177,7 @@ class InventoryAnalyticsService
         return 'safe';
     }
 
-    private function calculateRecommendedRestock(int $currentStock, int $minStockLevel, float $avgDailyUsage): int
+    private function calculateRecommendedRestock(int $currentStock, int $minStockLevel, int $avgDailyUsage): int
     {
         $baseTarget = max($minStockLevel * 2, (int) ceil($avgDailyUsage * 14));
 

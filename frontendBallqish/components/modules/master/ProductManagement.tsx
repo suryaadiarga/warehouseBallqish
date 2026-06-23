@@ -18,7 +18,6 @@ type Product = {
   id: number;
   category_id: number;
   sku: string;
-  barcode?: string | null;
   name: string;
   stock: number;
   min_stock_level: number;
@@ -49,10 +48,9 @@ export function ProductManagement() {
   const [form, setForm] = useState({
     name: '',
     sku: '',
-    barcode: '',
     category_id: '',
-    min_stock_level: 10,
-    price: 0,
+    min_stock_level: '10',
+    price: '',
   });
 
   const loadData = async (page = 1, nextSearch = query) => {
@@ -92,6 +90,7 @@ export function ProductManagement() {
       const payload = {
         ...form,
         category_id: Number(form.category_id),
+        min_stock_level: Number(form.min_stock_level),
         price: Number(form.price),
       };
 
@@ -101,7 +100,7 @@ export function ProductManagement() {
         title: 'Produk ditambahkan',
         description: response.data.message,
       });
-      setForm({ name: '', sku: '', barcode: '', category_id: '', min_stock_level: 10, price: 0 });
+      setForm({ name: '', sku: '', category_id: '', min_stock_level: '10', price: '' });
       setShowForm(false);
       await loadData(1, '');
       setSearch('');
@@ -177,10 +176,6 @@ export function ProductManagement() {
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} required />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Barcode</label>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} />
-            </div>
-            <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Kategori</label>
               <select className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.category_id} onChange={(e) => setForm((current) => ({ ...current, category_id: e.target.value }))} required>
                 <option value="">Pilih kategori</option>
@@ -193,11 +188,11 @@ export function ProductManagement() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Min Stock Level</label>
-              <input type="number" min={0} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.min_stock_level} onChange={(e) => setForm((current) => ({ ...current, min_stock_level: Number(e.target.value) }))} required />
+              <input type="number" min={0} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.min_stock_level} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, min_stock_level: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Harga</label>
-              <input type="number" min={0} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.price} onChange={(e) => setForm((current) => ({ ...current, price: Number(e.target.value) }))} required />
+              <input type="number" min={0} step={1} inputMode="numeric" placeholder="Masukkan harga" className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.price} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div className="md:col-span-2 xl:col-span-3">
               <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">

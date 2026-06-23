@@ -64,7 +64,7 @@ export function StockAdjustmentsPage() {
 
     try {
       const [productRes, warehouseRes, locationRes] = await Promise.all([
-        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 100 } }),
+        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 1000 } }),
         api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
         api.get<ApiEnvelope<WarehouseLocationOption[]>>('/warehouse-locations'),
       ]);
@@ -166,7 +166,7 @@ export function StockAdjustmentsPage() {
   if (products.length === 0) {
     return (
       <div className="space-y-6">
-        <PageHeader eyebrow="Warehouse Operations" title="Stock Adjustments" description="Koreksi stok manual yang tetap tercatat rapi ke backend WMS." />
+        <PageHeader eyebrow="Audit Stok" title="Stock Adjustments" description="Catat koreksi kerusakan, kehilangan, atau selisih yang ditemukan saat audit." />
         <EmptyState title="Belum ada produk" description="Tambahkan master produk terlebih dahulu sebelum membuat stock adjustment." />
       </div>
     );
@@ -175,9 +175,9 @@ export function StockAdjustmentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Warehouse Operations"
+        eyebrow="Audit Stok"
         title="Stock Adjustments"
-        description="Lakukan koreksi stok terkontrol dengan tipe increase atau decrease, reason wajib, dan hasil before/after dari backend."
+        description="Tindak lanjut hasil audit untuk kerusakan, kehilangan, atau koreksi lain. Setiap perubahan tercatat sebagai mutasi approved."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -223,7 +223,7 @@ export function StockAdjustmentsPage() {
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Gudang</label>
             <select value={form.warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="">Tanpa lokasi detail</option>
+              <option value="">Pilih rak otomatis</option>
               {filteredLocations.map((location) => (
                 <option key={location.id} value={location.id}>
                   {location.code} - {location.name}
