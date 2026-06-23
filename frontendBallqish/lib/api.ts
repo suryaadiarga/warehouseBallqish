@@ -11,6 +11,21 @@ export type ApiEnvelope<T> = {
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
+
+export function resolveApiAssetUrl(path?: string | null) {
+  const fallback = `${API_BASE_URL.replace(/\/api\/?$/, '')}/product-images/default-product.webp`;
+
+  if (!path) {
+    return fallback;
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return `${API_BASE_URL.replace(/\/api\/?$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 export function getStoredToken() {
   if (typeof window === 'undefined') {
@@ -81,7 +96,7 @@ export function extractApiErrorMessage(error: unknown, fallback = 'Terjadi kesal
 }
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api',
+  baseURL: API_BASE_URL,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',

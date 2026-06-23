@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             WarehouseLocationSeeder::class,
             SupplierSeeder::class,
             ProductSeeder::class,
+            ProductImageSeeder::class,
             StockMutationSeeder::class,
             ProductStockSeeder::class,
             WorkflowDatasetSeeder::class,

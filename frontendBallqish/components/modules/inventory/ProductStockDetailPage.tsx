@@ -2,6 +2,7 @@
 
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
@@ -16,6 +17,7 @@ type StockDetailResponse = {
     sku: string;
     stock: number;
     min_stock_level: number;
+    image_url?: string;
   };
   stocks: Array<{
     id: number;
@@ -77,6 +79,15 @@ export function ProductStockDetailPage({ productId }: { productId: string }) {
           </Link>
         }
       />
+
+      <section className="surface-card flex flex-col gap-5 rounded-[28px] p-5 sm:flex-row sm:items-center">
+        <ProductImage src={data.product.image_url} alt={data.product.name} showIllustrationLabel className="h-36 w-full rounded-2xl border border-slate-200 sm:w-36 sm:shrink-0" />
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-600">Referensi Produk</p>
+          <h2 className="mt-2 text-xl font-black text-slate-900">{data.product.name}</h2>
+          <p className="mt-2 text-sm text-slate-500">Gambar merupakan ilustrasi representatif berdasarkan jenis produk, bukan foto persis SKU.</p>
+        </div>
+      </section>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <MetricCard label="Total Stok" value={totalStock} icon={Boxes} />

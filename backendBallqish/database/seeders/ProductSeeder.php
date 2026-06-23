@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
+use App\Services\ProductImageResolver;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -21,6 +22,7 @@ class ProductSeeder extends Seeder
         $now = now();
         $rows = [];
         $sequence = 0;
+        $imageResolver = app(ProductImageResolver::class);
 
         foreach ($this->catalog() as $categoryName => $config) {
             for ($index = 0; $index < $config['count']; $index++) {
@@ -36,6 +38,7 @@ class ProductSeeder extends Seeder
                     'sku' => $config['prefix'].'-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT),
                     'barcode' => '899'.str_pad((string) $sequence, 10, '0', STR_PAD_LEFT),
                     'name' => "{$base} {$brand} {$variant}",
+                    'image_key' => $imageResolver->resolve("{$base} {$brand} {$variant}", $config['prefix'].'-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT)),
                     'stock' => 0,
                     'min_stock_level' => 5 + (($sequence * 7) % 16),
                     'lead_time_days' => 3 + (($sequence * 5) % 12),

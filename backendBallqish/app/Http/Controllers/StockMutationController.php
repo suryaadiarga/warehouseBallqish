@@ -22,7 +22,7 @@ class StockMutationController extends Controller
     {
         $mutation = $this->mutationService
             ->createDraft($request->validated(), $request->user()->id)
-            ->load(['product:id,name,sku', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
+            ->load(['product:id,name,sku,image_key', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
 
         return $this->successResponse($mutation, 'Draft mutasi berhasil dibuat', 201);
     }
@@ -46,9 +46,9 @@ class StockMutationController extends Controller
     public function reject($id, Request $request)
     {
         $mutation = StockMutation::findOrFail($id);
-        
+
         $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
-        if (!in_array($request->user()->role, $allowedRoles)) {
+        if (! in_array($request->user()->role, $allowedRoles)) {
             return $this->errorResponse('Hanya admin yang bisa menolak mutasi.', 403);
         }
 

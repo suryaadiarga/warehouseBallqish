@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProductRequest;
 use App\Models\Product;
 use App\Models\StockMutation;
+use App\Services\ProductImageResolver;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -12,7 +13,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->select(['id', 'category_id', 'supplier_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'price'])
+            ->select(['id', 'category_id', 'supplier_id', 'sku', 'name', 'image_key', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'price'])
             ->with(['category:id,name', 'supplier:id,name']);
 
         if ($request->filled('category_id')) {
@@ -51,6 +52,7 @@ class ProductController extends Controller
     {
         $validated = $request->validated();
         $validated['stock'] = 0; // Stok awal wajib 0, harus lewat mutasi IN
+        $validated['image_key'] = app(ProductImageResolver::class)->resolve($validated['name'], $validated['sku']);
 
         $product = Product::create($validated);
 
@@ -60,7 +62,9 @@ class ProductController extends Controller
     public function update(StoreProductRequest $request, $id)
     {
         $product = Product::findOrFail($id);
-        $product->update($request->validated());
+        $validated = $request->validated();
+        $validated['image_key'] = app(ProductImageResolver::class)->resolve($validated['name'], $validated['sku']);
+        $product->update($validated);
 
         return $this->successResponse(
             $product->fresh(['category:id,name', 'supplier:id,name']),
@@ -79,7 +83,7 @@ class ProductController extends Controller
     public function stocks($id)
     {
         $product = Product::query()
-            ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+            ->select(['id', 'name', 'sku', 'image_key', 'stock', 'min_stock_level'])
             ->with([
                 'productStocks' => fn ($query) => $query
                     ->with([
@@ -91,7 +95,7 @@ class ProductController extends Controller
             ->findOrFail($id);
 
         return $this->successResponse([
-            'product' => $product->only(['id', 'name', 'sku', 'stock', 'min_stock_level']),
+            'product' => $product->only(['id', 'name', 'sku', 'image_key', 'image_url', 'image_is_illustration', 'stock', 'min_stock_level']),
             'stocks' => $product->productStocks,
         ], 'Detail stok produk berhasil diambil');
     }
@@ -99,7 +103,7 @@ class ProductController extends Controller
     public function stockCard($id, Request $request)
     {
         $product = Product::query()
-            ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+            ->select(['id', 'name', 'sku', 'image_key', 'stock', 'min_stock_level'])
             ->findOrFail($id);
 
         $query = StockMutation::query()

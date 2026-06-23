@@ -11,7 +11,7 @@ class ProductStockController extends Controller
     {
         $query = ProductStock::query()
             ->with([
-                'product:id,name,sku,stock,min_stock_level',
+                'product:id,name,sku,image_key,stock,min_stock_level',
                 'warehouse:id,name,location',
                 'warehouseLocation:id,warehouse_id,code,name',
             ]);

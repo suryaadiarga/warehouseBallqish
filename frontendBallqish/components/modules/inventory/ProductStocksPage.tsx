@@ -2,6 +2,7 @@
 
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
@@ -22,6 +23,7 @@ type ProductStockItem = {
     sku: string;
     stock: number;
     min_stock_level: number;
+    image_url?: string;
   };
   warehouse?: {
     id: number;
@@ -182,8 +184,13 @@ export function ProductStocksPage() {
                     return (
                       <tr key={stock.id} className="hover:bg-slate-50/80">
                         <td className="px-6 py-4">
-                          <p className="font-bold text-slate-900">{stock.product.name}</p>
-                          <p className="mt-1 font-mono text-xs text-slate-500">{stock.product.sku}</p>
+                          <div className="flex min-w-[260px] items-center gap-3">
+                            <ProductImage src={stock.product.image_url} alt={stock.product.name} className="h-14 w-14 shrink-0 rounded-xl border border-slate-200" />
+                            <div>
+                              <p className="font-bold text-slate-900">{stock.product.name}</p>
+                              <p className="mt-1 font-mono text-xs text-slate-500">{stock.product.sku}</p>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-slate-700">
                           <p className="font-semibold">{stock.warehouse?.name ?? '-'}</p>

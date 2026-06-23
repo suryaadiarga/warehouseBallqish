@@ -17,7 +17,7 @@ class DashboardController extends Controller
         $data = [
             'total_products' => Product::count(),
             'low_stock_alerts' => Product::query()
-                ->select(['id', 'name', 'sku', 'stock', 'min_stock_level'])
+                ->select(['id', 'name', 'sku', 'image_key', 'stock', 'min_stock_level'])
                 ->whereColumn('stock', '<=', 'min_stock_level')
                 ->orderBy('stock')
                 ->limit(20)
