@@ -42,7 +42,7 @@ function LoginContent() {
       showToast({
         type: 'success',
         title: 'Login berhasil',
-        description: 'Sesi Anda telah terhubung ke backend WMS Ballqish.',
+        description: 'Selamat datang kembali.',
       });
       router.push(searchParams.get('redirect') || '/dashboard');
     } catch (err: unknown) {
@@ -78,10 +78,10 @@ function LoginContent() {
               Ruang Kerja Gudang Terintegrasi
             </div>
             <h1 className="mb-4 text-5xl font-black leading-tight text-white xl:text-6xl">
-              Operasional gudang yang rapi, cerdas, dan siap demo.
+              Kelola gudang dalam satu tempat.
             </h1>
             <p className="max-w-xl text-lg leading-8 text-slate-400">
-              Aplikasi ini disiapkan untuk mengelola produk, mutasi stok, analitik, dan wawasan gudang Ballqish dengan pengalaman yang lebih profesional.
+              Pantau produk, stok, mutasi, dan aktivitas gudang dengan mudah.
             </p>
           </div>
 
@@ -89,7 +89,7 @@ function LoginContent() {
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Modul</p>
               <p className="mt-3 text-3xl font-black text-white">32</p>
-              <p className="mt-1 text-sm text-slate-400">API routes terintegrasi</p>
+              <p className="mt-1 text-sm text-slate-400">Fitur pengelolaan gudang</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Visibilitas</p>
@@ -116,7 +116,7 @@ function LoginContent() {
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Akses Aman</p>
               <h2 className="mt-2 text-3xl font-black text-slate-900">Masuk ke ruang kerja gudang</h2>
               <p className="mt-2 leading-7 text-slate-500">
-                Gunakan akun backend yang sudah terdaftar untuk mengakses dashboard operasional WMS Ballqish.
+                Gunakan akun Anda untuk masuk ke Ballqish WMS.
               </p>
             </div>
 

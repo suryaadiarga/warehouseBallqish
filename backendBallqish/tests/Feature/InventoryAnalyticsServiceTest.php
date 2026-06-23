@@ -90,4 +90,101 @@ class InventoryAnalyticsServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(60, $analysis['critical_score']);
         $this->assertNotEmpty($analysis['risk_reasons']);
     }
+
+    public function test_product_without_outbound_for_10_to_30_days_is_slow_moving(): void
+    {
+        Carbon::setTestNow('2026-06-23 12:00:00');
+
+        $category = Category::create(['name' => 'Slow']);
+        $user = User::factory()->create();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'sku' => 'SLOW-001',
+            'name' => 'Produk Slow-moving',
+            'stock' => 25,
+            'min_stock_level' => 10,
+            'lead_time_days' => 7,
+            'safety_stock' => 10,
+            'price' => 10000,
+        ]);
+
+        StockMutation::forceCreate([
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'type' => 'out',
+            'quantity' => 2,
+            'status' => 'approved',
+            'mutation_source' => 'manual',
+            'created_at' => Carbon::now()->subDays(10),
+            'updated_at' => Carbon::now()->subDays(10),
+        ]);
+
+        $analysis = app(InventoryAnalyticsService::class)->buildProductAnalysis($product->load('category'));
+
+        $this->assertSame(10, $analysis['days_since_last_outbound']);
+        $this->assertSame('slow_moving', $analysis['movement_status']);
+        $this->assertTrue($analysis['is_slow_moving']);
+        $this->assertFalse($analysis['is_dead_stock']);
+        $this->assertIsInt($analysis['forecast_daily_usage']);
+    }
+
+    public function test_product_without_outbound_for_more_than_30_days_is_dead_stock(): void
+    {
+        Carbon::setTestNow('2026-06-23 12:00:00');
+
+        $category = Category::create(['name' => 'Dead']);
+        $user = User::factory()->create();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'sku' => 'DEAD-001',
+            'name' => 'Produk Dead Stock',
+            'stock' => 25,
+            'min_stock_level' => 10,
+            'lead_time_days' => 7,
+            'safety_stock' => 10,
+            'price' => 10000,
+        ]);
+
+        StockMutation::forceCreate([
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'type' => 'out',
+            'quantity' => 2,
+            'status' => 'approved',
+            'mutation_source' => 'manual',
+            'created_at' => Carbon::now()->subDays(31),
+            'updated_at' => Carbon::now()->subDays(31),
+        ]);
+
+        $analysis = app(InventoryAnalyticsService::class)->buildProductAnalysis($product->load('category'));
+
+        $this->assertSame(31, $analysis['days_since_last_outbound']);
+        $this->assertSame('dead_stock', $analysis['movement_status']);
+        $this->assertFalse($analysis['is_slow_moving']);
+        $this->assertTrue($analysis['is_dead_stock']);
+    }
+
+    public function test_zero_stock_is_stock_out_instead_of_dead_stock(): void
+    {
+        Carbon::setTestNow('2026-06-23 12:00:00');
+
+        $category = Category::create(['name' => 'Stock Out']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'sku' => 'OUT-001',
+            'name' => 'Produk Stock Habis',
+            'stock' => 0,
+            'min_stock_level' => 10,
+            'lead_time_days' => 7,
+            'safety_stock' => 10,
+            'price' => 10000,
+            'created_at' => Carbon::now()->subDays(60),
+            'updated_at' => Carbon::now()->subDays(60),
+        ]);
+
+        $analysis = app(InventoryAnalyticsService::class)->buildProductAnalysis($product->load('category'));
+
+        $this->assertSame('stock_out', $analysis['movement_status']);
+        $this->assertFalse($analysis['is_dead_stock']);
+    }
 }

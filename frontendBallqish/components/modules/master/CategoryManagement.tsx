@@ -90,7 +90,7 @@ export function CategoryManagement() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat kategori" description="Mengambil kategori dari backend WMS." />;
+    return <LoadingState title="Memuat kategori" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -102,7 +102,6 @@ export function CategoryManagement() {
       <PageHeader
         eyebrow="Data Master"
         title="Kategori"
-        description="Kelola klasifikasi produk agar inventaris lebih mudah dicari dan dianalisis."
         action={
           <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-700">
             <Plus size={18} />
@@ -128,7 +127,6 @@ export function CategoryManagement() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Daftar Kategori</h3>
-          <p className="mt-1 text-sm text-slate-500">Semua kategori diambil langsung dari endpoint master data kategori backend.</p>
         </div>
 
         {categories.length === 0 ? (

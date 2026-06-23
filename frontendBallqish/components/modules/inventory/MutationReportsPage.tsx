@@ -112,7 +112,7 @@ export function MutationReportsPage() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat laporan mutasi" description="Mengambil riwayat laporan mutasi dari backend inventaris." />;
+    return <LoadingState title="Memuat laporan mutasi" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -124,7 +124,6 @@ export function MutationReportsPage() {
       <PageHeader
         eyebrow="Audit & Pelaporan"
         title="Laporan Mutasi"
-        description="Laporan mutasi premium untuk audit operasional gudang, dilengkapi filter tanggal dan export CSV."
         action={
           <button type="button" onClick={exportCsv} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 font-bold text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-600">
             <Download size={18} />
@@ -137,7 +136,7 @@ export function MutationReportsPage() {
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h3 className="text-lg font-black text-slate-900">Filter Laporan</h3>
-            <p className="mt-1 text-sm text-slate-500">Gunakan rentang tanggal untuk memeriksa mutasi pada periode tertentu. Endpoint laporan backend saat ini mengirim detail produk dan pelaksana, tetapi belum menyertakan relasi gudang.</p>
+            <p className="mt-1 text-sm text-slate-500">Pilih rentang tanggal laporan.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <input type="date" value={filters.start_date} onChange={(e) => setFilters((current) => ({ ...current, start_date: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500" />
@@ -190,7 +189,7 @@ export function MutationReportsPage() {
                       <td className="px-6 py-4 text-xs text-slate-600">
                         <p>Dibuat oleh: {mutation.user?.name || '-'}</p>
                         <p className="mt-1">Disetujui oleh: {mutation.approver?.name || '-'}</p>
-                        <p className="mt-1 text-slate-500">{mutation.reason || mutation.note || 'Tanpa catatan'}</p>
+                        {mutation.reason ? <p className="mt-1 text-slate-500">{mutation.reason}</p> : null}
                       </td>
                     </tr>
                   ))}

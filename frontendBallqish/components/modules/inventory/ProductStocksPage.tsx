@@ -92,7 +92,7 @@ export function ProductStocksPage() {
   const lowStockCount = stocks.filter((item) => item.quantity <= item.product.min_stock_level).length;
 
   if (loading) {
-    return <LoadingState title="Memuat stok produk" description="Mengambil stok detail per gudang dan lokasi dari backend." />;
+    return <LoadingState title="Memuat stok produk" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -104,7 +104,6 @@ export function ProductStocksPage() {
       <PageHeader
         eyebrow="Detail Inventaris"
         title="Stok Produk"
-        description="Stok detail utama backend WMS ditampilkan per produk, gudang, dan lokasi penyimpanan."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">

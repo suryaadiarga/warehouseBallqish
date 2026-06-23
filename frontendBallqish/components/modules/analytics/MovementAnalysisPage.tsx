@@ -23,6 +23,10 @@ type MovementItem = {
   forecast_method: 'ewma' | 'croston_sba';
   confidence_score: number;
   critical_score: number;
+  days_since_last_outbound: number;
+  movement_status: 'active' | 'slow_moving' | 'dead_stock' | 'stock_out';
+  is_slow_moving: boolean;
+  is_dead_stock: boolean;
   total_outbound_last_30_days: number;
   movement_count_last_30_days: number;
   estimated_days_until_stockout?: number | null;
@@ -71,13 +75,14 @@ export function MovementAnalysisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeItems = useMemo(() => items.filter((item) => item.forecast_daily_usage > 0), [items]);
+  const activeItems = useMemo(() => items.filter((item) => item.movement_status === 'active' && item.forecast_daily_usage > 0), [items]);
   const fastMoving = useMemo(() => [...activeItems].sort((a, b) => b.forecast_daily_usage - a.forecast_daily_usage).slice(0, 5), [activeItems]);
-  const slowMoving = useMemo(() => [...activeItems].sort((a, b) => a.forecast_daily_usage - b.forecast_daily_usage).slice(0, 5), [activeItems]);
+  const slowMoving = useMemo(() => items.filter((item) => item.movement_status === 'slow_moving').sort((a, b) => b.days_since_last_outbound - a.days_since_last_outbound).slice(0, 5), [items]);
+  const deadStock = useMemo(() => items.filter((item) => item.movement_status === 'dead_stock'), [items]);
   const selectedWarehouseName = warehouses.find((warehouse) => String(warehouse.id) === warehouseId)?.name ?? 'Semua gudang';
 
   if (loading) {
-    return <LoadingState title="Memuat analisis pergerakan" description="Mengambil analisis rata-rata pengeluaran dan peringkat pergerakan produk dari backend." />;
+    return <LoadingState title="Memuat analisis pergerakan" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -87,15 +92,15 @@ export function MovementAnalysisPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inventaris Cerdas"
+        eyebrow="Pergerakan Stok"
         title="Analisis Pergerakan"
-        description="Prediksi 90 hari menggunakan EWMA dan Croston/SBA untuk membaca pergerakan cepat, pergerakan lambat, serta risiko stock habis."
       />
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Produk Dianalisis" value={items.length} icon={ChartColumn} description={`Periode tinjauan ${meta?.lookback_days ?? 30} hari dari backend.`} />
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Produk Dianalisis" value={items.length} icon={ChartColumn} />
         <MetricCard label="Pergerakan Cepat" value={fastMoving.length} icon={ArrowUpWideNarrow} tone="emerald" description={`Produk dengan rata-rata penggunaan tertinggi pada cakupan ${selectedWarehouseName}.`} />
-        <MetricCard label="Pergerakan Lambat" value={slowMoving.length} icon={ArrowDownWideNarrow} tone="amber" description="Produk aktif dengan rata-rata penggunaan terendah." />
+        <MetricCard label="Slow-moving" value={items.filter((item) => item.movement_status === 'slow_moving').length} icon={ArrowDownWideNarrow} tone="amber" description="Tidak ada barang keluar selama 10–30 hari." />
+        <MetricCard label="Dead Stock" value={deadStock.length} icon={ArrowDownWideNarrow} tone="rose" description="Stok tersedia tanpa barang keluar lebih dari 30 hari." />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
@@ -156,7 +161,7 @@ export function MovementAnalysisPage() {
                   </div>
                   <div>
                     <h4 className="text-base font-black text-slate-900">Produk Bergerak Lambat</h4>
-                    <p className="mt-1 text-sm text-slate-500">Produk aktif dengan pergerakan paling lambat.</p>
+                    <p className="mt-1 text-sm text-slate-500">Produk tanpa barang keluar selama 10–30 hari.</p>
                   </div>
                 </div>
                 <div className="mt-5 space-y-3">
@@ -166,7 +171,7 @@ export function MovementAnalysisPage() {
                         <p className="font-semibold text-slate-900">#{index + 1} {item.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                       </div>
-                      <p className="text-lg font-black text-amber-700">{item.forecast_daily_usage}</p>
+                      <p className="text-right text-sm font-black text-amber-700">{item.days_since_last_outbound} hari<span className="block text-xs font-normal">tanpa barang keluar</span></p>
                     </div>
                   ))}
                 </div>
@@ -181,6 +186,7 @@ export function MovementAnalysisPage() {
                     <th className="px-6 py-4">Produk</th>
                     <th className="px-6 py-4">Prediksi</th>
                     <th className="px-6 py-4">Keluar 30 Hari</th>
+                    <th className="px-6 py-4">Pergerakan</th>
                     <th className="px-6 py-4">Stock Habis</th>
                     <th className="px-6 py-4">Status</th>
                   </tr>
@@ -193,10 +199,14 @@ export function MovementAnalysisPage() {
                         <p className="font-semibold text-slate-900">{item.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                       </td>
-                      <td className="px-6 py-4 font-black text-slate-900">{item.forecast_daily_usage}<span className="mt-1 block text-xs font-normal text-slate-500">{item.forecast_method === 'croston_sba' ? 'Croston/SBA' : 'EWMA'} · {item.confidence_score}%</span></td>
+                      <td className="px-6 py-4 font-black text-slate-900">{item.forecast_daily_usage}/hari</td>
                       <td className="px-6 py-4 text-slate-700">
                         <p>{item.total_outbound_last_30_days}</p>
-                        <p className="mt-1 text-xs text-slate-500">{item.movement_count_last_30_days} movement</p>
+                        <p className="mt-1 text-xs text-slate-500">{item.movement_count_last_30_days} pergerakan</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge label={item.movement_status} tone={item.movement_status === 'dead_stock' || item.movement_status === 'stock_out' ? 'critical' : item.movement_status === 'slow_moving' ? 'warning' : 'safe'} />
+                        <p className="mt-1 text-xs text-slate-500">{item.days_since_last_outbound} hari sejak barang keluar terakhir</p>
                       </td>
                       <td className="px-6 py-4 text-slate-700">
                         <p>{item.estimated_days_until_stockout ?? '-'}</p>

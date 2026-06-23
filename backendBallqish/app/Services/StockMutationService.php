@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMutation;
-use App\Models\StockOpname;
 use App\Models\WarehouseLocation;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -188,77 +187,6 @@ class StockMutationService
         });
     }
 
-    public function createStockOpname(array $data, int $userId): StockOpname
-    {
-        return DB::transaction(function () use ($data, $userId) {
-            $stockOpname = StockOpname::create([
-                'warehouse_id' => $data['warehouse_id'],
-                'user_id' => $userId,
-                'status' => 'draft',
-                'note' => $data['note'] ?? null,
-            ]);
-
-            foreach ($data['items'] as $item) {
-                $systemQty = $this->getWarehouseTotalStock($item['product_id'], $data['warehouse_id']);
-                $physicalQty = (int) $item['physical_qty'];
-
-                $stockOpname->items()->create([
-                    'product_id' => $item['product_id'],
-                    'system_qty' => $systemQty,
-                    'physical_qty' => $physicalQty,
-                    'selisih' => $physicalQty - $systemQty,
-                ]);
-            }
-
-            return $stockOpname->load(['warehouse:id,name', 'user:id,name', 'items.product:id,name,sku']);
-        });
-    }
-
-    public function completeStockOpname(int $id, int $approvedBy, string $userRole): StockOpname
-    {
-        $this->assertPrivilegedRole($userRole);
-
-        return DB::transaction(function () use ($id, $approvedBy) {
-            $stockOpname = StockOpname::with(['items.product', 'warehouse'])->lockForUpdate()->findOrFail($id);
-
-            if ($stockOpname->status === 'completed') {
-                throw new Exception('Stock opname ini sudah diselesaikan sebelumnya.', 400);
-            }
-
-            foreach ($stockOpname->items as $item) {
-                if ($item->selisih === 0) {
-                    continue;
-                }
-
-                $mutation = StockMutation::create([
-                    'product_id' => $item->product_id,
-                    'warehouse_id' => $stockOpname->warehouse_id,
-                    'warehouse_location_id' => null,
-                    'from_warehouse_id' => $item->selisih < 0 ? $stockOpname->warehouse_id : null,
-                    'to_warehouse_id' => $item->selisih > 0 ? $stockOpname->warehouse_id : null,
-                    'user_id' => $stockOpname->user_id,
-                    'approved_by' => $approvedBy,
-                    'reference_number' => $this->generateReferenceNumber('OPN'),
-                    'mutation_source' => 'opname',
-                    'type' => $item->selisih > 0 ? 'in' : 'out',
-                    'quantity' => abs($item->selisih),
-                    'status' => 'draft',
-                    'note' => $stockOpname->note,
-                    'reason' => 'Penyesuaian hasil stock opname',
-                ]);
-
-                $this->applyApprovedMutation($mutation, $approvedBy);
-            }
-
-            $stockOpname->update([
-                'status' => 'completed',
-                'completed_at' => now(),
-            ]);
-
-            return $stockOpname->fresh(['warehouse:id,name', 'user:id,name', 'items.product:id,name,sku']);
-        });
-    }
-
     private function applyApprovedMutation(StockMutation $mutation, ?int $approvedBy = null): void
     {
         $this->ensureValidWarehouseLocationPair($mutation->warehouse_id, $mutation->warehouse_location_id);
@@ -404,14 +332,6 @@ class StockMutationService
         }
 
         return (int) $selected['id'];
-    }
-
-    private function getWarehouseTotalStock(int $productId, int $warehouseId): int
-    {
-        return (int) ProductStock::query()
-            ->where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->sum('quantity');
     }
 
     private function ensureValidWarehouseLocationPair(?int $warehouseId, ?int $locationId): void

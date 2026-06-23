@@ -59,7 +59,7 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
   }, [productId]);
 
   if (loading) {
-    return <LoadingState title="Memuat kartu stok" description="Mengambil jejak audit mutasi produk dari backend." />;
+    return <LoadingState title="Memuat kartu stok" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -67,7 +67,7 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
   }
 
   if (!data) {
-    return <EmptyState title="Stock card tidak tersedia" description="Backend belum mengirimkan data kartu stok untuk produk ini." />;
+    return <EmptyState title="Kartu stok tidak tersedia" description="Data kartu stok belum tersedia." />;
   }
 
   return (
@@ -75,19 +75,17 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
       <PageHeader
         eyebrow="Jejak Audit"
         title={`Kartu Stok: ${data.product.name}`}
-        description={`Jejak mutasi kronologis untuk SKU ${data.product.sku}, termasuk before, change, dan after quantity.`}
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Stok Saat Ini" value={data.product.stock} icon={PackageSearch} description="Ringkasan stok produk." />
-        <MetricCard label="Entri" value={data.stock_card.length} icon={History} tone="sky" description="Jumlah transaksi pada kartu stok produk ini." />
-        <MetricCard label="Stok Minimum" value={data.product.min_stock_level} icon={FileSpreadsheet} tone="amber" description="Batas minimum yang dipakai backend untuk peringatan stok." />
+        <MetricCard label="Stok Saat Ini" value={data.product.stock} icon={PackageSearch} />
+        <MetricCard label="Entri" value={data.stock_card.length} icon={History} tone="sky" />
+        <MetricCard label="Stok Minimum" value={data.product.min_stock_level} icon={FileSpreadsheet} tone="amber" />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Kartu Stok</h3>
-          <p className="mt-1 text-sm text-slate-500">Tampilan ini dirancang sebagai audit trail profesional untuk demo dan pelacakan transaksi.</p>
         </div>
 
         {data.stock_card.length === 0 ? (

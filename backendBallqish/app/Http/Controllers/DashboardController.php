@@ -42,7 +42,7 @@ class DashboardController extends Controller
     public function insights(Request $request)
     {
         $warehouseId = $request->filled('warehouse_id') ? $request->integer('warehouse_id') : null;
-        $cacheKey = 'dashboard:insights:v2:warehouse:'.($warehouseId ?? 'all').':days:90';
+        $cacheKey = 'dashboard:insights:v3:warehouse:'.($warehouseId ?? 'all').':days:90';
         $insights = Cache::remember(
             $cacheKey,
             now()->addSeconds(60),

@@ -190,7 +190,7 @@ export function StockTransfersPage() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat data transfer stok" description="Mengambil referensi produk, gudang, dan lokasi dari backend." />;
+    return <LoadingState title="Memuat data transfer stok" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -217,11 +217,11 @@ export function StockTransfersPage() {
       <div className="grid gap-5 xl:grid-cols-3">
         <MetricCard label="Produk Tersedia" value={products.length} icon={PackageSearch} description="Produk yang bisa dipilih untuk transfer." />
         <MetricCard label="Gudang" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang sumber dan tujuan transfer." />
-        <MetricCard label="Hasil Terakhir" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" description="ID transfer terakhir dari backend." />
+        <MetricCard label="Hasil Terakhir" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" />
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
-        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Peran Anda bukan admin gudang. Formulir tetap ditampilkan untuk referensi, tetapi backend dapat menolak pengiriman jika otoritas tidak cukup.</div> : null}
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Hanya admin gudang yang dapat memproses transfer.</div> : null}
 
         <form
           onSubmit={(event) => {
@@ -305,7 +305,6 @@ export function StockTransfersPage() {
         <section className="surface-card rounded-[28px] overflow-hidden">
           <div className="border-b border-slate-100 px-6 py-5">
             <h3 className="text-lg font-black text-slate-900">Hasil Transfer</h3>
-            <p className="mt-1 text-sm text-slate-500">Transfer berhasil diproses oleh backend dengan ID transfer yang sama.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">

@@ -79,7 +79,7 @@ export function ProductStockDetailPage({ productId }: { productId: string }) {
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Total Stok" value={totalStock} icon={Boxes} description="Ringkasan total stok dari backend produk." />
+        <MetricCard label="Total Stok" value={totalStock} icon={Boxes} />
         <MetricCard label="Gudang Aktif" value={activeWarehouses} icon={Warehouse} tone="sky" description="Jumlah gudang yang menyimpan produk ini." />
         <MetricCard label="Lokasi Aktif" value={activeLocations} icon={MapPin} tone="emerald" description="Jumlah baris lokasi dengan quantity aktif." />
       </div>

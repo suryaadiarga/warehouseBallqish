@@ -14,7 +14,7 @@ class StockAlertController extends Controller
         $warehouseId = $request->filled('warehouse_id') ? $request->integer('warehouse_id') : null;
         $alerts = $this->analyticsService
             ->buildMovementAnalysis($warehouseId)
-            ->filter(fn (array $alert) => $alert['status'] !== 'safe')
+            ->filter(fn (array $alert) => $alert['status'] !== 'safe' || $alert['movement_status'] === 'dead_stock')
             ->sortByDesc('critical_score')
             ->values();
 

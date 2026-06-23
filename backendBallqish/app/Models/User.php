@@ -44,8 +44,4 @@ class User extends Authenticatable
             ->implode('');
     }
 
-    public function stockOpnames()
-    {
-        return $this->hasMany(StockOpname::class);
-    }
 }

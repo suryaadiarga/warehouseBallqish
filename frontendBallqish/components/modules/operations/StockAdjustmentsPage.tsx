@@ -290,7 +290,7 @@ export function StockAdjustmentsPage() {
         </section>
       ) : null}
 
-      <ConfirmDialog open={confirmOpen} title="Proses penyesuaian stok?" description="Penyesuaian akan langsung memengaruhi stok dan tersimpan sebagai mutasi yang disetujui di backend." confirmLabel="Ya, Proses Penyesuaian" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitAdjustment()} />
+      <ConfirmDialog open={confirmOpen} title="Proses penyesuaian stok?" description="Jumlah stok akan langsung diperbarui." confirmLabel="Ya, Proses Penyesuaian" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitAdjustment()} />
     </div>
   );
 }

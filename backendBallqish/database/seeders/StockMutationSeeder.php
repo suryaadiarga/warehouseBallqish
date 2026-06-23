@@ -134,7 +134,8 @@ class StockMutationSeeder extends Seeder
         return [
             ['name' => 'critical_fast', 'products' => 80, 'events' => 150, 'outbound_percent' => 80, 'min_quantity' => 3, 'max_quantity' => 9],
             ['name' => 'warning', 'products' => 120, 'events' => 120, 'outbound_percent' => 65, 'min_quantity' => 1, 'max_quantity' => 5],
-            ['name' => 'safe', 'products' => 252, 'events' => 90, 'outbound_percent' => 50, 'min_quantity' => 1, 'max_quantity' => 4],
+            ['name' => 'safe', 'products' => 212, 'events' => 90, 'outbound_percent' => 50, 'min_quantity' => 1, 'max_quantity' => 4],
+            ['name' => 'slow_moving', 'products' => 40, 'events' => 90, 'outbound_percent' => 40, 'min_quantity' => 1, 'max_quantity' => 4],
             ['name' => 'intermittent', 'products' => 100, 'events' => 70, 'outbound_percent' => 20, 'min_quantity' => 2, 'max_quantity' => 8],
             ['name' => 'demand_spike', 'products' => 40, 'events' => 140, 'outbound_percent' => 82, 'min_quantity' => 1, 'max_quantity' => 4],
             ['name' => 'dead_stock', 'products' => 40, 'events' => 33, 'outbound_percent' => 35, 'min_quantity' => 1, 'max_quantity' => 4],
@@ -166,6 +167,8 @@ class StockMutationSeeder extends Seeder
     {
         if ($profile === 'dead_stock') {
             $daysAgo = 89 - (int) floor(($index * 58) / max($eventCount - 1, 1));
+        } elseif ($profile === 'slow_moving') {
+            $daysAgo = 89 - (int) floor(($index * 74) / max($eventCount - 1, 1));
         } elseif ($profile === 'demand_spike') {
             $olderEventCount = (int) floor($eventCount * 0.6);
             if ($index < $olderEventCount) {
@@ -201,6 +204,7 @@ class StockMutationSeeder extends Seeder
             'critical_fast', 'demand_spike' => max(1, (int) floor($minimumStock / 3)),
             'warning' => max($minimumStock, (int) ceil($averageDailyUsage * 10)),
             'safe' => max($minimumStock * 5, (int) ceil($averageDailyUsage * 45)),
+            'slow_moving' => max($minimumStock * 4, (int) ceil($averageDailyUsage * 45)),
             'intermittent' => max($minimumStock * 3, (int) ceil($averageDailyUsage * 45)),
             'dead_stock' => $minimumStock * 10,
             default => $minimumStock * 2,

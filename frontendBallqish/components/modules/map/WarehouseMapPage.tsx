@@ -90,7 +90,7 @@ export function WarehouseMapPage() {
   const selected = projected.find((item) => item.id === selectedId) ?? projected[0] ?? null;
 
   if (loading) {
-    return <LoadingState title="Memuat peta gudang" description="Mengambil koordinat gudang dari backend untuk divisualisasikan." />;
+    return <LoadingState title="Memuat peta gudang" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -100,7 +100,7 @@ export function WarehouseMapPage() {
   if (projected.length === 0) {
     return (
       <div className="space-y-6">
-        <PageHeader eyebrow="Data Geografis" title="Peta Gudang" description="Tampilan koordinat gudang yang siap dipakai untuk demo integrasi lokasi dan peta." />
+        <PageHeader eyebrow="Lokasi Gudang" title="Peta Gudang" />
         <EmptyState title="Belum ada koordinat gudang" description="Isi lintang dan bujur pada data master gudang agar penanda dapat ditampilkan." />
       </div>
     );
@@ -109,23 +109,19 @@ export function WarehouseMapPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Data Geografis"
+        eyebrow="Lokasi Gudang"
         title="Peta Gudang"
-        description="Visualisasi lokasi gudang berdasarkan koordinat backend. Halaman ini memakai data nyata dari `/api/warehouses/map` dan tetap ringan tanpa menambah dependensi peta baru."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Gudang Terpetakan" value={projected.length} icon={Warehouse} description="Jumlah gudang dengan koordinat valid dari backend." />
-        <MetricCard label="Penanda Terpilih" value={selected?.name ?? '-'} icon={MapPinned} tone="sky" description="Penanda yang sedang difokuskan pada panel detail." />
-        <MetricCard label="Navigasi Tersedia" value="OSM" icon={Navigation} tone="emerald" description="Setiap penanda bisa dibuka langsung ke OpenStreetMap." />
+        <MetricCard label="Gudang Terpetakan" value={projected.length} icon={Warehouse} />
+        <MetricCard label="Penanda Terpilih" value={selected?.name ?? '-'} icon={MapPinned} tone="sky" />
+        <MetricCard label="Navigasi" value="OSM" icon={Navigation} tone="emerald" />
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <div className="surface-card rounded-[28px] p-5">
-          <div className="mb-4">
-            <h3 className="text-lg font-black text-slate-900">Peta Koordinat Gudang</h3>
-            <p className="mt-1 text-sm text-slate-500">Panel ini memetakan penanda gudang dari koordinat lintang dan bujur yang sudah disiapkan backend.</p>
-          </div>
+          <h3 className="mb-4 text-lg font-black text-slate-900">Peta Koordinat Gudang</h3>
 
           <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,_#eff6ff_0%,_#f8fafc_32%,_#ecfeff_100%)]">
             <svg viewBox="0 0 1000 560" className="h-[560px] w-full">

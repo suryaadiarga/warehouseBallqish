@@ -24,6 +24,8 @@ type StockAlertItem = {
   confidence_score: number;
   critical_score: number;
   demand_spike: boolean;
+  days_since_last_outbound: number;
+  movement_status: 'active' | 'slow_moving' | 'dead_stock' | 'stock_out';
   lead_time_days: number;
   safety_stock: number;
   risk_reasons: string[];
@@ -77,7 +79,7 @@ export function StockAlertsPage() {
   const selectedWarehouseName = warehouses.find((warehouse) => String(warehouse.id) === warehouseId)?.name ?? 'Semua gudang';
 
   if (loading) {
-    return <LoadingState title="Memuat peringatan stok" description="Mengambil hasil analitik stok kritis dan prediksi stock habis dari backend." />;
+    return <LoadingState title="Memuat peringatan stok" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -87,22 +89,21 @@ export function StockAlertsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inventaris Cerdas"
+        eyebrow="Pemantauan Stok"
         title="Peringatan Stok"
-        description="Deteksi gabungan menggunakan EWMA untuk permintaan stabil, Croston/SBA untuk permintaan berselang, serta skor kritis berbasis waktu tunggu dan stok pengaman."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Produk Kritis" value={criticalCount} icon={AlertTriangle} tone="rose" description="Produk yang diprediksi akan habis sangat cepat atau stoknya terlalu rendah." />
-        <MetricCard label="Produk Waspada" value={warningCount} icon={AlertTriangle} tone="amber" description="Produk yang sudah mendekati batas minimum stok." />
-        <MetricCard label="Saran Pengisian Ulang" value={totalRecommendation} icon={PackageSearch} tone="emerald" description="Total rekomendasi pengisian ulang dari hasil analitik saat ini." />
+        <MetricCard label="Produk Kritis" value={criticalCount} icon={AlertTriangle} tone="rose" />
+        <MetricCard label="Produk Waspada" value={warningCount} icon={AlertTriangle} tone="amber" />
+        <MetricCard label="Saran Pengisian Ulang" value={totalRecommendation} icon={PackageSearch} tone="emerald" />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h3 className="text-lg font-black text-slate-900">Filter Gudang</h3>
-            <p className="mt-1 text-sm text-slate-500">Scope alert saat ini: {selectedWarehouseName}.</p>
+            <p className="mt-1 text-sm text-slate-500">{selectedWarehouseName}</p>
           </div>
           <div className="flex w-full max-w-md gap-3">
             <select value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)} className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
@@ -130,7 +131,7 @@ export function StockAlertsPage() {
                 <tr>
                   <th className="px-6 py-4">Produk</th>
                   <th className="px-6 py-4">Saat Ini / Minimum</th>
-                  <th className="px-6 py-4">Prediksi AI</th>
+                  <th className="px-6 py-4">Pemakaian</th>
                   <th className="px-6 py-4">Prediksi Habis</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Pengisian Ulang</th>
@@ -143,7 +144,6 @@ export function StockAlertsPage() {
                       <p className="font-semibold text-slate-900">{alert.name}</p>
                       <p className="mt-1 text-xs text-slate-500">{alert.sku}</p>
                       <p className="mt-1 text-xs text-slate-400">{alert.category ?? 'Tanpa kategori'}</p>
-                      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-sky-600">{alert.forecast_method === 'croston_sba' ? 'Croston/SBA' : 'EWMA'}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-lg font-black text-slate-900">{alert.current_stock}</p>
@@ -159,8 +159,11 @@ export function StockAlertsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge label={alert.status} tone={alert.status === 'critical' ? 'critical' : alert.status === 'warning' ? 'warning' : 'safe'} />
+                      <div className="mt-2">
+                        <StatusBadge label={alert.movement_status} tone={alert.movement_status === 'dead_stock' || alert.movement_status === 'stock_out' ? 'critical' : alert.movement_status === 'slow_moving' ? 'warning' : 'safe'} />
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">{alert.days_since_last_outbound} hari sejak barang keluar terakhir</p>
                       <p className="mt-2 text-xs font-bold text-slate-700">Risiko {alert.critical_score}/100</p>
-                      <p className="mt-1 text-xs text-slate-500">Tingkat keyakinan {alert.confidence_score}%</p>
                       {alert.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Lonjakan permintaan</p> : null}
                     </td>
                     <td className="px-6 py-4">

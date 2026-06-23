@@ -12,7 +12,7 @@ export function LoadingState({ title = 'Memuat data', description = 'Mohon tungg
   );
 }
 
-export function EmptyState({ title = 'Belum ada data', description = 'Data akan muncul setelah backend mengirimkan hasil.' }) {
+export function EmptyState({ title = 'Belum ada data', description = 'Belum ada data untuk ditampilkan.' }) {
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-10 text-center">
       <div className="rounded-2xl bg-slate-100 p-4 text-slate-500">

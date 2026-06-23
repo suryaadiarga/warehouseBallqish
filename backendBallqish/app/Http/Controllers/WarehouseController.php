@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Models\ProductStock;
 use App\Models\StockMutation;
-use App\Models\StockOpname;
 use App\Models\Warehouse;
 
 class WarehouseController extends Controller
@@ -47,12 +46,11 @@ class WarehouseController extends Controller
             || StockMutation::where('warehouse_id', $warehouse->id)
                 ->orWhere('from_warehouse_id', $warehouse->id)
                 ->orWhere('to_warehouse_id', $warehouse->id)
-                ->exists()
-            || StockOpname::where('warehouse_id', $warehouse->id)->exists();
+                ->exists();
 
         if ($used) {
             return $this->errorResponse(
-                'Gudang tidak dapat dihapus karena masih memiliki lokasi, stok, transaksi, atau stock opname terkait.',
+                'Gudang tidak dapat dihapus karena masih memiliki lokasi, stok, transaksi, atau audit stok terkait.',
                 409
             );
         }
