@@ -14,9 +14,15 @@ type Category = {
   name: string;
 };
 
+type Supplier = {
+  id: number;
+  name: string;
+};
+
 type Product = {
   id: number;
   category_id: number;
+  supplier_id: number;
   sku: string;
   name: string;
   stock: number;
@@ -25,6 +31,7 @@ type Product = {
   safety_stock: number;
   price?: number;
   category?: Category;
+  supplier?: Supplier;
 };
 
 type ProductPagination = {
@@ -38,6 +45,7 @@ export function ProductManagement() {
   const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [pagination, setPagination] = useState<ProductPagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,6 +59,7 @@ export function ProductManagement() {
     name: '',
     sku: '',
     category_id: '',
+    supplier_id: '',
     min_stock_level: '10',
     lead_time_days: '7',
     safety_stock: '10',
@@ -62,7 +71,7 @@ export function ProductManagement() {
     setError('');
 
     try {
-      const [productRes, categoryRes] = await Promise.all([
+      const [productRes, categoryRes, supplierRes] = await Promise.all([
         api.get<ApiEnvelope<Product[]>>('/products', {
           params: {
             page,
@@ -70,10 +79,12 @@ export function ProductManagement() {
           },
         }),
         api.get<ApiEnvelope<Category[]>>('/categories'),
+        api.get<ApiEnvelope<Supplier[]>>('/suppliers'),
       ]);
       setProducts(productRes.data.data);
       setPagination((productRes.data.meta?.pagination as ProductPagination | undefined) ?? null);
       setCategories(categoryRes.data.data);
+      setSuppliers(supplierRes.data.data);
     } catch (err: unknown) {
       setError(extractApiErrorMessage(err, 'Gagal memuat data produk.'));
     } finally {
@@ -94,6 +105,7 @@ export function ProductManagement() {
       const payload = {
         ...form,
         category_id: Number(form.category_id),
+        supplier_id: Number(form.supplier_id),
         min_stock_level: Number(form.min_stock_level),
         lead_time_days: Number(form.lead_time_days),
         safety_stock: Number(form.safety_stock),
@@ -106,7 +118,7 @@ export function ProductManagement() {
         title: 'Produk ditambahkan',
         description: response.data.message,
       });
-      setForm({ name: '', sku: '', category_id: '', min_stock_level: '10', lead_time_days: '7', safety_stock: '10', price: '' });
+      setForm({ name: '', sku: '', category_id: '', supplier_id: '', min_stock_level: '10', lead_time_days: '7', safety_stock: '10', price: '' });
       setShowForm(false);
       await loadData(1, '');
       setSearch('');
@@ -192,6 +204,17 @@ export function ProductManagement() {
               </select>
             </div>
             <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Supplier</label>
+              <select className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.supplier_id} onChange={(e) => setForm((current) => ({ ...current, supplier_id: e.target.value }))} required>
+                <option value="">Pilih supplier</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Batas Minimum Stok</label>
               <input type="number" min={0} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.min_stock_level} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, min_stock_level: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
@@ -251,6 +274,7 @@ export function ProductManagement() {
                   <tr>
                     <th className="px-6 py-4">Produk</th>
                     <th className="px-6 py-4">Kategori</th>
+                    <th className="px-6 py-4">Supplier</th>
                     <th className="px-6 py-4">Stok</th>
                     <th className="px-6 py-4">Stok Minimum</th>
                     <th className="px-6 py-4">Aksi</th>
@@ -264,6 +288,7 @@ export function ProductManagement() {
                         <p className="mt-1 font-mono text-xs text-slate-500">{product.sku}</p>
                       </td>
                       <td className="px-6 py-4 text-slate-600">{product.category?.name ?? '-'}</td>
+                      <td className="px-6 py-4 text-slate-600">{product.supplier?.name ?? '-'}</td>
                       <td className="px-6 py-4 font-semibold text-slate-800">{product.stock}</td>
                       <td className="px-6 py-4 text-slate-600">{product.min_stock_level}</td>
                       <td className="px-6 py-4">

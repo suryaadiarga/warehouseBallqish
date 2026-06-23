@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/utils/validators.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/query_views.dart';
 import '../../shared/crud_services.dart';
@@ -23,8 +22,6 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
   Future<void> _showForm({Warehouse? warehouse}) async {
     final name = TextEditingController(text: warehouse?.name ?? '');
     final location = TextEditingController(text: warehouse?.location ?? '');
-    final lat = TextEditingController(text: warehouse?.latitude ?? '');
-    final lng = TextEditingController(text: warehouse?.longitude ?? '');
     final save = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -41,18 +38,6 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
               TextField(
                 controller: location,
                 decoration: const InputDecoration(labelText: 'Lokasi'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: lat,
-                decoration: const InputDecoration(labelText: 'Latitude'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: lng,
-                decoration: const InputDecoration(labelText: 'Longitude'),
-                keyboardType: TextInputType.number,
               ),
             ],
           ),
@@ -74,8 +59,6 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
       final body = {
         'name': name.text.trim(),
         'location': location.text.trim().isEmpty ? null : location.text.trim(),
-        'latitude': Validators.parseNullableDouble(lat.text),
-        'longitude': Validators.parseNullableDouble(lng.text),
       };
       if (warehouse == null) {
         await _service.create(body);

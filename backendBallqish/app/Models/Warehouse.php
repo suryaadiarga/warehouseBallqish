@@ -12,17 +12,7 @@ class Warehouse extends Model
     protected $fillable = [
         'name',
         'location',
-        'latitude',
-        'longitude',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'latitude' => 'decimal:7',
-            'longitude' => 'decimal:7',
-        ];
-    }
 
     public function locations()
     {
