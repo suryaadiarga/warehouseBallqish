@@ -139,8 +139,8 @@ export function StockTransfersPage() {
     if (form.quantity < 1) {
       showToast({
         type: 'error',
-        title: 'Quantity tidak valid',
-        description: 'Quantity transfer minimal 1.',
+        title: 'Jumlah tidak valid',
+        description: 'Jumlah transfer minimal 1.',
       });
       return false;
     }
@@ -200,7 +200,7 @@ export function StockTransfersPage() {
   if (products.length === 0 || warehouses.length < 2) {
     return (
       <div className="space-y-6">
-        <PageHeader eyebrow="Warehouse Operations" title="Stock Transfers" description="Transfer antar-rak atau antar-gudang dengan pemilihan rak otomatis." />
+        <PageHeader eyebrow="Operasional Gudang" title="Transfer Stok" description="Transfer antar-rak atau antar-gudang dengan pemilihan rak otomatis." />
         <EmptyState title="Referensi transfer belum siap" description="Pastikan minimal ada satu produk dan dua gudang sebelum membuat transfer stok." />
       </div>
     );
@@ -209,19 +209,19 @@ export function StockTransfersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Warehouse Operations"
-        title="Stock Transfers"
+        eyebrow="Operasional Gudang"
+        title="Transfer Stok"
         description="Pindahkan stok antar-rak atau antar-gudang secara atomic. Kosongkan lokasi agar sistem memilih rak asal dan tujuan."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Products Ready" value={products.length} icon={PackageSearch} description="Produk yang bisa dipilih untuk transfer." />
-        <MetricCard label="Warehouses" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang sumber dan tujuan transfer." />
-        <MetricCard label="Last Result" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" description="Transfer ID terakhir dari backend." />
+        <MetricCard label="Produk Tersedia" value={products.length} icon={PackageSearch} description="Produk yang bisa dipilih untuk transfer." />
+        <MetricCard label="Gudang" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang sumber dan tujuan transfer." />
+        <MetricCard label="Hasil Terakhir" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" description="ID transfer terakhir dari backend." />
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
-        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Role Anda bukan admin gudang. Form tetap ditampilkan untuk referensi, tetapi backend dapat menolak submit jika otoritas tidak cukup.</div> : null}
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Peran Anda bukan admin gudang. Formulir tetap ditampilkan untuk referensi, tetapi backend dapat menolak pengiriman jika otoritas tidak cukup.</div> : null}
 
         <form
           onSubmit={(event) => {
@@ -288,12 +288,12 @@ export function StockTransfersPage() {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Quantity</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Jumlah</label>
             <input type="number" min={1} value={form.quantity} onChange={(event) => { const quantity = Number(event.target.value); const source = stockPositions.find((stock) => stock.quantity >= quantity) ?? stockPositions[0]; const sourceLocationId = source?.warehouse_location_id ? String(source.warehouse_location_id) : form.from_warehouse_location_id; const destinations = compatibleDestinationLocations(form.to_warehouse_id, quantity, sourceLocationId); setForm((current) => ({ ...current, quantity, from_warehouse_id: source ? String(source.warehouse_id) : current.from_warehouse_id, from_warehouse_location_id: sourceLocationId, to_warehouse_location_id: destinations[0] ? String(destinations[0].id) : '' })); }} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
             <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
-            <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Contoh: transfer ke gudang cabang untuk replenishment." />
+            <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Contoh: transfer ke gudang cabang untuk pengisian ulang." />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
             <button type="submit" className="rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white transition hover:bg-sky-700">Proses Transfer</button>
@@ -305,18 +305,18 @@ export function StockTransfersPage() {
         <section className="surface-card rounded-[28px] overflow-hidden">
           <div className="border-b border-slate-100 px-6 py-5">
             <h3 className="text-lg font-black text-slate-900">Hasil Transfer</h3>
-            <p className="mt-1 text-sm text-slate-500">Transfer berhasil diproses oleh backend dengan grouping transfer ID yang sama.</p>
+            <p className="mt-1 text-sm text-slate-500">Transfer berhasil diproses oleh backend dengan ID transfer yang sama.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                 <tr>
-                  <th className="px-6 py-4">Reference</th>
-                  <th className="px-6 py-4">Movement</th>
-                  <th className="px-6 py-4">Warehouse</th>
-                  <th className="px-6 py-4">Before</th>
-                  <th className="px-6 py-4">Qty</th>
-                  <th className="px-6 py-4">After</th>
+                  <th className="px-6 py-4">Referensi</th>
+                  <th className="px-6 py-4">Pergerakan</th>
+                  <th className="px-6 py-4">Gudang</th>
+                  <th className="px-6 py-4">Sebelum</th>
+                  <th className="px-6 py-4">Jumlah</th>
+                  <th className="px-6 py-4">Sesudah</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

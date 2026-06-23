@@ -60,19 +60,19 @@ type DashboardInsights = {
 const summaryCards = [
   {
     key: 'safe_products',
-    label: 'Safe Products',
+    label: 'Produk Aman',
     icon: ShieldCheck,
     tone: 'safe' as const,
   },
   {
     key: 'warning_products',
-    label: 'Warning Products',
+    label: 'Produk Waspada',
     icon: AlertTriangle,
     tone: 'warning' as const,
   },
   {
     key: 'critical_products',
-    label: 'Critical Products',
+    label: 'Produk Kritis',
     icon: ChartColumnIncreasing,
     tone: 'critical' as const,
   },
@@ -126,7 +126,7 @@ function InsightTable({
       {items.length === 0 ? (
         <div className="p-6">
           <EmptyState
-            title="Belum ada insight"
+            title="Belum ada wawasan"
             description="Data akan muncul setelah backend memiliki riwayat pergerakan stok yang cukup."
           />
         </div>
@@ -137,10 +137,10 @@ function InsightTable({
               <tr>
                 <th className="px-6 py-4">Produk</th>
                 <th className="px-6 py-4">Stok</th>
-                <th className="px-6 py-4">AI Forecast</th>
+                <th className="px-6 py-4">Prediksi AI</th>
                 <th className="px-6 py-4">Prediksi Habis</th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Restock</th>
+                <th className="px-6 py-4">Pengisian Ulang</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -162,8 +162,8 @@ function InsightTable({
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge label={item.status} tone={item.status} />
-                    <p className="mt-2 text-xs font-bold text-slate-700">Risk {item.critical_score} · Confidence {item.confidence_score}%</p>
-                    {item.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Demand spike</p> : null}
+                    <p className="mt-2 text-xs font-bold text-slate-700">Risiko {item.critical_score} · Tingkat keyakinan {item.confidence_score}%</p>
+                    {item.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Lonjakan permintaan</p> : null}
                   </td>
                   <td className="px-6 py-4 font-black text-slate-900">{item.recommended_restock_qty}</td>
                 </tr>
@@ -203,7 +203,7 @@ export function DashboardOverview() {
         if (active) setInsights(data);
       })
       .catch((err: unknown) => {
-        if (active) setInsightsError(extractApiErrorMessage(err, 'Gagal memuat insight dashboard.'));
+        if (active) setInsightsError(extractApiErrorMessage(err, 'Gagal memuat wawasan dashboard.'));
       })
       .finally(() => {
         if (active) setInsightsLoading(false);
@@ -217,13 +217,13 @@ export function DashboardOverview() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations Overview"
+        eyebrow="Ringkasan Operasional"
         title="Dashboard Ballqish WMS"
-        description="Ringkasan gudang, insight stok kritis, dan tren pergerakan produk ditampilkan langsung dari endpoint analytics backend."
+        description="Ringkasan gudang, wawasan stok kritis, dan tren pergerakan produk ditampilkan langsung dari endpoint analitik backend."
       />
 
       {insightsLoading ? (
-        <LoadingState title="Memuat insight stok" description="Menghitung status dan tren pergerakan produk." />
+        <LoadingState title="Memuat wawasan stok" description="Menghitung status dan tren pergerakan produk." />
       ) : insightsError ? (
         <ErrorState title="Insight dashboard gagal dimuat" description={insightsError} />
       ) : insights ? (
@@ -251,7 +251,7 @@ export function DashboardOverview() {
           })}
         </div>
       ) : (
-        <EmptyState title="Insight belum tersedia" description="Backend belum mengembalikan data insight." />
+        <EmptyState title="Wawasan belum tersedia" description="Backend belum mengembalikan data wawasan." />
       )}
 
       {dashboardLoading ? (
@@ -277,7 +277,7 @@ export function DashboardOverview() {
               <ArrowUpRight size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Inbound Today</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Barang Masuk Hari Ini</p>
               <p className="text-2xl font-black text-slate-950">{dashboard.total_inbound_today}</p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export function DashboardOverview() {
               <ArrowDownRight size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Outbound Today</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Barang Keluar Hari Ini</p>
               <p className="text-2xl font-black text-slate-950">{dashboard.total_outbound_today}</p>
             </div>
           </div>
@@ -300,19 +300,19 @@ export function DashboardOverview() {
 
       {insights ? <>
         <InsightTable
-          title="Critical Products"
+          title="Produk Kritis"
           description="Produk yang perlu perhatian cepat berdasarkan aturan stok minimum dan prediksi kehabisan."
           items={insights.critical_products}
         />
 
         <div className="grid gap-6 xl:grid-cols-2">
           <InsightTable
-            title="Fast Moving Products"
+            title="Produk Bergerak Cepat"
             description="Produk dengan rata-rata pengeluaran tertinggi pada periode analisis backend."
             items={insights.fast_moving_products}
           />
           <InsightTable
-            title="Slow Moving Products"
+            title="Produk Bergerak Lambat"
             description="Produk yang tetap bergerak, tetapi dengan usage harian paling rendah."
             items={insights.slow_moving_products}
           />

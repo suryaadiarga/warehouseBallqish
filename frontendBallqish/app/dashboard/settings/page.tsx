@@ -68,7 +68,7 @@ export default function SettingsPage() {
   };
 
   if (!pageReady) {
-    return <LoadingState title="Memuat profil akun" description="Frontend sedang mengambil data user dari backend." />;
+    return <LoadingState title="Memuat profil akun" description="Aplikasi sedang mengambil data pengguna dari server." />;
   }
 
   if (pageError) {
@@ -76,7 +76,7 @@ export default function SettingsPage() {
   }
 
   if (!user) {
-    return <ErrorState title="Profil tidak tersedia" description="Data user aktif belum ditemukan pada sesi saat ini." />;
+    return <ErrorState title="Profil tidak tersedia" description="Data pengguna aktif belum ditemukan pada sesi saat ini." />;
   }
 
   return (
@@ -105,13 +105,13 @@ export default function SettingsPage() {
           <ShieldCheck className="text-emerald-500" size={24} />
           <div>
             <h3 className="text-lg font-black text-slate-800">Keamanan Akun</h3>
-            <p className="text-xs text-slate-500">Ubah password secara berkala untuk menjaga keamanan data gudang.</p>
+            <p className="text-xs text-slate-500">Ubah kata sandi secara berkala untuk menjaga keamanan data gudang.</p>
           </div>
         </div>
 
         <form onSubmit={handleUpdatePassword} className="space-y-5 p-6">
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Password Saat Ini</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi Saat Ini</label>
             <input
               type="password"
               required
@@ -121,7 +121,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Password Baru (Min. 8 Karakter)</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi Baru (Min. 8 Karakter)</label>
             <input
               type="password"
               required
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Konfirmasi Password Baru</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Konfirmasi Kata Sandi Baru</label>
             <input
               type="password"
               required

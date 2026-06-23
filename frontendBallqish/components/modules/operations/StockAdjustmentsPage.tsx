@@ -96,8 +96,8 @@ export function StockAdjustmentsPage() {
     if (!form.reason.trim()) {
       showToast({
         type: 'error',
-        title: 'Reason wajib diisi',
-        description: 'Adjustment membutuhkan alasan yang jelas untuk audit operasional.',
+        title: 'Alasan wajib diisi',
+        description: 'Penyesuaian membutuhkan alasan yang jelas untuk audit operasional.',
       });
       return false;
     }
@@ -105,8 +105,8 @@ export function StockAdjustmentsPage() {
     if (form.quantity < 1) {
       showToast({
         type: 'error',
-        title: 'Quantity tidak valid',
-        description: 'Quantity adjustment minimal 1.',
+        title: 'Jumlah tidak valid',
+        description: 'Jumlah penyesuaian minimal 1.',
       });
       return false;
     }
@@ -141,13 +141,13 @@ export function StockAdjustmentsPage() {
       });
       showToast({
         type: 'success',
-        title: 'Adjustment berhasil',
+        title: 'Penyesuaian berhasil',
         description: response.data.message,
       });
     } catch (err: unknown) {
       showToast({
         type: 'error',
-        title: 'Adjustment gagal',
+        title: 'Penyesuaian gagal',
         description: extractApiErrorMessage(err, 'Periksa reason, quantity, dan stok pada gudang yang dipilih.'),
       });
     } finally {
@@ -160,14 +160,14 @@ export function StockAdjustmentsPage() {
   }
 
   if (error) {
-    return <ErrorState title="Adjustment stok gagal dimuat" description={error} />;
+    return <ErrorState title="Penyesuaian stok gagal dimuat" description={error} />;
   }
 
   if (products.length === 0) {
     return (
       <div className="space-y-6">
-        <PageHeader eyebrow="Audit Stok" title="Stock Adjustments" description="Catat koreksi kerusakan, kehilangan, atau selisih yang ditemukan saat audit." />
-        <EmptyState title="Belum ada produk" description="Tambahkan master produk terlebih dahulu sebelum membuat stock adjustment." />
+        <PageHeader eyebrow="Audit Stok" title="Penyesuaian Stok" description="Catat koreksi kerusakan, kehilangan, atau selisih yang ditemukan saat audit." />
+        <EmptyState title="Belum ada produk" description="Tambahkan master produk terlebih dahulu sebelum membuat penyesuaian stok." />
       </div>
     );
   }
@@ -176,18 +176,18 @@ export function StockAdjustmentsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Audit Stok"
-        title="Stock Adjustments"
-        description="Tindak lanjut hasil audit untuk kerusakan, kehilangan, atau koreksi lain. Setiap perubahan tercatat sebagai mutasi approved."
+        title="Penyesuaian Stok"
+        description="Tindak lanjut hasil audit untuk kerusakan, kehilangan, atau koreksi lain. Setiap perubahan tercatat sebagai mutasi yang disetujui."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Products" value={products.length} icon={Boxes} description="Produk yang siap disesuaikan stoknya." />
-        <MetricCard label="Warehouses" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang tersedia untuk adjustment per lokasi." />
-        <MetricCard label="Last Adjustment" value={result?.reference_number ?? '-'} icon={Scale} tone="amber" description="Reference adjustment terakhir yang diproses." />
+        <MetricCard label="Produk" value={products.length} icon={Boxes} description="Produk yang siap disesuaikan stoknya." />
+        <MetricCard label="Gudang" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang tersedia untuk penyesuaian per lokasi." />
+        <MetricCard label="Penyesuaian Terakhir" value={result?.reference_number ?? '-'} icon={Scale} tone="amber" description="Referensi penyesuaian terakhir yang diproses." />
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
-        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Role Anda bukan admin gudang. Backend bisa menolak adjustment jika otoritas tidak cukup.</div> : null}
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Peran Anda bukan admin gudang. Backend bisa menolak penyesuaian jika otoritas tidak cukup.</div> : null}
 
         <form
           onSubmit={(event) => {
@@ -232,18 +232,18 @@ export function StockAdjustmentsPage() {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Tipe Adjustment</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Tipe Penyesuaian</label>
             <select value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value as 'increase' | 'decrease' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="increase">Increase</option>
-              <option value="decrease">Decrease</option>
+              <option value="increase">Penambahan</option>
+              <option value="decrease">Pengurangan</option>
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Quantity</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Jumlah</label>
             <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((current) => ({ ...current, quantity: Number(event.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
-            <label className="mb-2 block text-sm font-bold text-slate-700">Reason</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Alasan</label>
             <input value={form.reason} onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Contoh: Barang rusak saat pengecekan." required />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
@@ -251,7 +251,7 @@ export function StockAdjustmentsPage() {
             <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Tambahkan catatan tambahan jika diperlukan." />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
-            <button type="submit" className="rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white transition hover:bg-sky-700">Proses Adjustment</button>
+            <button type="submit" className="rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white transition hover:bg-sky-700">Proses Penyesuaian</button>
           </div>
         </form>
       </section>
@@ -260,7 +260,7 @@ export function StockAdjustmentsPage() {
         <section className="surface-card rounded-[28px] p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Adjustment Result</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Hasil Penyesuaian</p>
               <h3 className="mt-2 text-xl font-black text-slate-950">{result.product?.name ?? 'Produk adjustment'}</h3>
               <p className="mt-1 text-sm text-slate-500">{result.reference_number ?? 'Tanpa reference number'}</p>
             </div>
@@ -271,18 +271,18 @@ export function StockAdjustmentsPage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <MetricCard label="Before Qty" value={result.before_qty ?? '-'} icon={Scale} tone="slate" />
-            <MetricCard label="Changed Qty" value={result.quantity} icon={Scale} tone={result.type === 'in' ? 'emerald' : 'rose'} />
-            <MetricCard label="After Qty" value={result.after_qty ?? '-'} icon={Scale} tone="emerald" />
+            <MetricCard label="Jumlah Sebelum" value={result.before_qty ?? '-'} icon={Scale} tone="slate" />
+            <MetricCard label="Jumlah Perubahan" value={result.quantity} icon={Scale} tone={result.type === 'in' ? 'emerald' : 'rose'} />
+            <MetricCard label="Jumlah Sesudah" value={result.after_qty ?? '-'} icon={Scale} tone="emerald" />
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Reason</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Alasan</p>
               <p className="mt-2 font-semibold text-slate-900">{result.reason}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Warehouse Scope</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Cakupan Gudang</p>
               <p className="mt-2 font-semibold text-slate-900">{result.warehouse?.name ?? 'Tanpa gudang spesifik'}</p>
               <p className="mt-1 text-sm text-slate-500">{result.warehouseLocation ? `${result.warehouseLocation.code} - ${result.warehouseLocation.name}` : 'Tanpa lokasi detail'}</p>
             </div>
@@ -290,7 +290,7 @@ export function StockAdjustmentsPage() {
         </section>
       ) : null}
 
-      <ConfirmDialog open={confirmOpen} title="Proses adjustment stok?" description="Adjustment akan langsung memengaruhi stok dan tersimpan sebagai mutasi approved di backend." confirmLabel="Ya, Proses Adjustment" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitAdjustment()} />
+      <ConfirmDialog open={confirmOpen} title="Proses penyesuaian stok?" description="Penyesuaian akan langsung memengaruhi stok dan tersimpan sebagai mutasi yang disetujui di backend." confirmLabel="Ya, Proses Penyesuaian" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitAdjustment()} />
     </div>
   );
 }

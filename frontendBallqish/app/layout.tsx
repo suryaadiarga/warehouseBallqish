@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Ballqish WMS",
-  description: "Frontend Warehouse Management System Ballqish",
+  description: "Sistem Manajemen Gudang Ballqish",
 };
 
 export default function RootLayout({

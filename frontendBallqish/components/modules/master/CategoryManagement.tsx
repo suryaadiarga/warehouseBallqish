@@ -100,9 +100,9 @@ export function CategoryManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Master Data"
-        title="Categories"
-        description="Kelola klasifikasi produk agar inventory lebih mudah dicari dan dianalisis."
+        eyebrow="Data Master"
+        title="Kategori"
+        description="Kelola klasifikasi produk agar inventaris lebih mudah dicari dan dianalisis."
         action={
           <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-700">
             <Plus size={18} />

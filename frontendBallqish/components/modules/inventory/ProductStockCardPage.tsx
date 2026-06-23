@@ -59,7 +59,7 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
   }, [productId]);
 
   if (loading) {
-    return <LoadingState title="Memuat stock card" description="Mengambil audit trail mutasi produk dari backend." />;
+    return <LoadingState title="Memuat kartu stok" description="Mengambil jejak audit mutasi produk dari backend." />;
   }
 
   if (error) {
@@ -73,15 +73,15 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Audit Trail"
-        title={`Stock Card: ${data.product.name}`}
+        eyebrow="Jejak Audit"
+        title={`Kartu Stok: ${data.product.name}`}
         description={`Jejak mutasi kronologis untuk SKU ${data.product.sku}, termasuk before, change, dan after quantity.`}
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Current Stock" value={data.product.stock} icon={PackageSearch} description="Ringkasan stock summary dari produk." />
-        <MetricCard label="Entries" value={data.stock_card.length} icon={History} tone="sky" description="Jumlah transaksi pada kartu stok produk ini." />
-        <MetricCard label="Minimum Stock" value={data.product.min_stock_level} icon={FileSpreadsheet} tone="amber" description="Batas minimum yang dipakai backend untuk peringatan stok." />
+        <MetricCard label="Stok Saat Ini" value={data.product.stock} icon={PackageSearch} description="Ringkasan stok produk." />
+        <MetricCard label="Entri" value={data.stock_card.length} icon={History} tone="sky" description="Jumlah transaksi pada kartu stok produk ini." />
+        <MetricCard label="Stok Minimum" value={data.product.min_stock_level} icon={FileSpreadsheet} tone="amber" description="Batas minimum yang dipakai backend untuk peringatan stok." />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
@@ -100,12 +100,12 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                 <tr>
                   <th className="px-6 py-4">Tanggal</th>
-                  <th className="px-6 py-4">Reference</th>
-                  <th className="px-6 py-4">Source</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Before</th>
-                  <th className="px-6 py-4">Change</th>
-                  <th className="px-6 py-4">After</th>
+                  <th className="px-6 py-4">Referensi</th>
+                  <th className="px-6 py-4">Sumber</th>
+                  <th className="px-6 py-4">Tipe</th>
+                  <th className="px-6 py-4">Sebelum</th>
+                  <th className="px-6 py-4">Perubahan</th>
+                  <th className="px-6 py-4">Sesudah</th>
                   <th className="px-6 py-4">Transfer ID</th>
                 </tr>
               </thead>

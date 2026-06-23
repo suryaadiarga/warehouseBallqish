@@ -12,7 +12,7 @@ export function InventoryMovementBadge({
   }
 
   if (source === 'adjustment') {
-    return <StatusBadge label="adjustment" tone="critical" />;
+    return <StatusBadge label="penyesuaian" tone="critical" />;
   }
 
   if (source === 'opname') {
@@ -24,11 +24,11 @@ export function InventoryMovementBadge({
   }
 
   if (type === 'in') {
-    return <StatusBadge label="in" tone="safe" />;
+    return <StatusBadge label="masuk" tone="safe" />;
   }
 
   if (type === 'out') {
-    return <StatusBadge label="out" tone="warning" />;
+    return <StatusBadge label="keluar" tone="warning" />;
   }
 
   return <StatusBadge label={source || type || 'unknown'} tone="neutral" />;

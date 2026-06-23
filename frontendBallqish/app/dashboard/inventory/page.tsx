@@ -6,7 +6,7 @@ import { ModuleTabs } from '@/components/ui/ModuleTabs';
 const tabs = [
   { id: 'products', label: 'Produk', description: 'Katalog dan SKU' },
   { id: 'categories', label: 'Kategori', description: 'Klasifikasi barang' },
-  { id: 'stocks', label: 'Stok Gudang & Rak', description: 'Distribusi inventory' },
+  { id: 'stocks', label: 'Stok Gudang & Rak', description: 'Distribusi inventaris' },
 ];
 
 export default async function InventoryWorkspace({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {

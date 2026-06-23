@@ -82,7 +82,7 @@ export function WarehouseManagement() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat gudang" description="Mengambil daftar warehouse aktif dari backend." />;
+    return <LoadingState title="Memuat gudang" description="Mengambil daftar gudang aktif dari backend." />;
   }
 
   if (error) {
@@ -92,7 +92,7 @@ export function WarehouseManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Master Data Gudang"
+        eyebrow="Data Master Gudang"
         title="Manajemen Gudang"
         description="Kelola lokasi operasional dan pantau jumlah rak serta persediaan pada setiap gudang."
         action={
@@ -115,11 +115,11 @@ export function WarehouseManagement() {
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.location} onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))} />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Latitude</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Lintang</label>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.latitude} onChange={(e) => setForm((current) => ({ ...current, latitude: e.target.value }))} />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Longitude</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Bujur</label>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.longitude} onChange={(e) => setForm((current) => ({ ...current, longitude: e.target.value }))} />
             </div>
             <div className="md:col-span-2">
@@ -165,13 +165,13 @@ export function WarehouseManagement() {
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <Warehouse size={16} className="text-amber-600" />
-                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">Quantity</p>
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">Jumlah</p>
                         <p className="mt-1 text-lg font-black text-slate-800">{Number(warehouse.total_quantity ?? 0).toLocaleString('id-ID')}</p>
                       </div>
                     </div>
                     <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white">
                       <MapPinned size={14} />
-                      Warehouse ID #{warehouse.id}
+                      ID Gudang #{warehouse.id}
                     </div>
                   </div>
                 </div>

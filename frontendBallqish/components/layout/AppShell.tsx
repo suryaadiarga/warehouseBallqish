@@ -29,10 +29,10 @@ type NavItem = {
 
 const navigation: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', description: 'Ringkasan operasional', icon: LayoutDashboard },
-  { href: '/dashboard/inventory', label: 'Produk & Stok', description: 'Katalog dan inventory', icon: Boxes },
+  { href: '/dashboard/inventory', label: 'Produk & Stok', description: 'Katalog dan inventaris', icon: Boxes },
   { href: '/dashboard/operations', label: 'Operasional Stok', description: 'Mutasi dan transfer', icon: ArrowLeftRight },
-  { href: '/dashboard/stock-audits', label: 'Audit Stok', description: 'Cycle count dan adjustment', icon: ClipboardList },
-  { href: '/dashboard/analytics', label: 'Analitik Inventory', description: 'Peringatan dan pergerakan', icon: ChartColumn },
+  { href: '/dashboard/stock-audits', label: 'Audit Stok', description: 'Penghitungan dan penyesuaian', icon: ClipboardList },
+  { href: '/dashboard/analytics', label: 'Analitik Inventaris', description: 'Peringatan dan pergerakan', icon: ChartColumn },
   { href: '/dashboard/warehouse-management', label: 'Manajemen Gudang', description: 'Gudang, rak, dan peta', icon: Warehouse },
 ];
 
@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-500">Ballqish</p>
-            <p className="mt-0.5 text-lg font-black tracking-tight text-white">Warehouse OS</p>
+            <p className="mt-0.5 text-lg font-black tracking-tight text-white">Sistem Gudang</p>
           </div>
         </Link>
         <button type="button" onClick={() => setMobileOpen(false)} className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white xl:hidden" aria-label="Tutup navigasi">
@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Menu size={20} />
               </button>
               <div className="min-w-0">
-                <p className="truncate text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Warehouse Management System</p>
+                <p className="truncate text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Sistem Manajemen Gudang</p>
                 <p className="mt-1 hidden text-sm font-semibold text-slate-600 sm:block">{dateLabel}</p>
               </div>
             </div>
