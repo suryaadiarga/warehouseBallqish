@@ -31,16 +31,22 @@ Route::middleware('auth:sanctum')->group(function () {
     // Master Data Kategori (Sudah Rapi)
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
     // Master Data Gudang
     Route::get('/warehouses', [WarehouseController::class, 'index']);
     Route::post('/warehouses', [WarehouseController::class, 'store']);
     Route::get('/warehouses/map', [WarehouseController::class, 'map']);
+    Route::get('/warehouses/{id}', [WarehouseController::class, 'show']);
+    Route::put('/warehouses/{id}', [WarehouseController::class, 'update']);
+    Route::delete('/warehouses/{id}', [WarehouseController::class, 'destroy']);
 
     // Lokasi Detail Gudang
     Route::get('/warehouse-locations', [WarehouseLocationController::class, 'index']);
     Route::post('/warehouse-locations', [WarehouseLocationController::class, 'store']);
+    Route::put('/warehouse-locations/{id}', [WarehouseLocationController::class, 'update']);
+    Route::delete('/warehouse-locations/{id}', [WarehouseLocationController::class, 'destroy']);
 
     // Master Data Produk (Sudah Rapi)
     Route::get('/products', [ProductController::class, 'index']);
@@ -48,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
     Route::get('/products/{id}/stocks', [ProductController::class, 'stocks']);
     Route::get('/products/{id}/stock-card', [ProductController::class, 'stockCard']);
+    Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
     // Stok per Gudang

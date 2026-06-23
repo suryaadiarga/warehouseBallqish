@@ -1,5 +1,5 @@
-import { ProductStocksPage } from '@/components/modules/inventory/ProductStocksPage';
+import { redirect } from 'next/navigation';
 
 export default function ProductStocksRoute() {
-  return <ProductStocksPage />;
+  redirect('/dashboard/inventory?tab=stocks');
 }

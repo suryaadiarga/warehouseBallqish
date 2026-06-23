@@ -4,7 +4,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { MapPinned, Plus, Warehouse } from 'lucide-react';
+import { Boxes, Grid3X3, MapPinned, Plus, Warehouse } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type WarehouseItem = {
@@ -13,6 +13,9 @@ type WarehouseItem = {
   location?: string | null;
   latitude?: string | null;
   longitude?: string | null;
+  rack_count?: number;
+  stock_rows_count?: number;
+  total_quantity?: number | string | null;
 };
 
 export function WarehouseManagement() {
@@ -89,9 +92,9 @@ export function WarehouseManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Warehouse Master"
-        title="Warehouses"
-        description="Kelola gudang aktif beserta informasi lokasi dan koordinat yang nanti bisa dipakai pada halaman peta."
+        eyebrow="Master Data Gudang"
+        title="Manajemen Gudang"
+        description="Kelola lokasi operasional dan pantau jumlah rak serta persediaan pada setiap gudang."
         action={
           <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700">
             <Plus size={18} />
@@ -131,7 +134,7 @@ export function WarehouseManagement() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Daftar Gudang</h3>
-          <p className="mt-1 text-sm text-slate-500">Sumber data dari endpoint `/api/warehouses` tanpa data mock.</p>
+          <p className="mt-1 text-sm text-slate-500">Ringkasan gudang, rak, dan stok langsung dari data operasional.</p>
         </div>
 
         {warehouses.length === 0 ? (
@@ -149,14 +152,21 @@ export function WarehouseManagement() {
                   <div className="flex-1">
                     <h4 className="text-lg font-black text-slate-900">{warehouse.name}</h4>
                     <p className="mt-1 text-sm text-slate-500">{warehouse.location || 'Lokasi belum diisi'}</p>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-3 gap-3">
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Latitude</p>
-                        <p className="mt-2 font-semibold text-slate-800">{warehouse.latitude || '-'}</p>
+                        <Grid3X3 size={16} className="text-sky-600" />
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">Rak</p>
+                        <p className="mt-1 text-lg font-black text-slate-800">{warehouse.rack_count ?? 0}</p>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Longitude</p>
-                        <p className="mt-2 font-semibold text-slate-800">{warehouse.longitude || '-'}</p>
+                        <Boxes size={16} className="text-emerald-600" />
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">SKU</p>
+                        <p className="mt-1 text-lg font-black text-slate-800">{warehouse.stock_rows_count ?? 0}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <Warehouse size={16} className="text-amber-600" />
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">Quantity</p>
+                        <p className="mt-1 text-lg font-black text-slate-800">{Number(warehouse.total_quantity ?? 0).toLocaleString('id-ID')}</p>
                       </div>
                     </div>
                     <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white">

@@ -12,7 +12,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->select(['id', 'category_id', 'sku', 'barcode', 'name', 'stock', 'min_stock_level'])
+            ->select(['id', 'category_id', 'sku', 'barcode', 'name', 'stock', 'min_stock_level', 'price'])
             ->with(['category:id,name']);
 
         if ($request->filled('category_id')) {
@@ -55,6 +55,17 @@ class ProductController extends Controller
         $product = Product::create($validated);
 
         return $this->successResponse($product, 'Produk berhasil ditambahkan', 201);
+    }
+
+    public function update(StoreProductRequest $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        $product->update($request->validated());
+
+        return $this->successResponse(
+            $product->fresh('category:id,name'),
+            'Produk berhasil diperbarui'
+        );
     }
 
     public function destroy($id)

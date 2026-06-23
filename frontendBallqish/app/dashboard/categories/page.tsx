@@ -1,5 +1,5 @@
-import { CategoryManagement } from '@/components/modules/master/CategoryManagement';
+import { redirect } from 'next/navigation';
 
 export default function CategoriesPage() {
-  return <CategoryManagement />;
+  redirect('/dashboard/inventory?tab=categories');
 }

@@ -12,9 +12,12 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             WarehouseSeeder::class,
+            WarehouseLocationSeeder::class,
             SupplierSeeder::class,
             ProductSeeder::class,
+            ProductCategoryNormalizationSeeder::class,
             StockMutationSeeder::class,
+            ProductStockSeeder::class,
         ]);
     }
 }

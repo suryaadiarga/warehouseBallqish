@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\StockMutation;
 use App\Services\InventoryAnalyticsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly InventoryAnalyticsService $analyticsService)
-    {
-    }
+    public function __construct(private readonly InventoryAnalyticsService $analyticsService) {}
 
     public function index()
     {
@@ -24,11 +24,11 @@ class DashboardController extends Controller
                 ->get(),
             'total_inbound_today' => StockMutation::where('type', 'in')
                 ->where('status', 'approved')
-                ->whereDate('created_at', today())
+                ->whereBetween('created_at', [today()->startOfDay(), today()->endOfDay()])
                 ->sum('quantity'),
             'total_outbound_today' => StockMutation::where('type', 'out')
                 ->where('status', 'approved')
-                ->whereDate('created_at', today())
+                ->whereBetween('created_at', [today()->startOfDay(), today()->endOfDay()])
                 ->sum('quantity'),
             'recent_activities' => StockMutation::with('product')
                 ->latest()
@@ -39,10 +39,15 @@ class DashboardController extends Controller
         return $this->successResponse($data, 'Ringkasan dashboard berhasil diambil');
     }
 
-    public function insights(\Illuminate\Http\Request $request)
+    public function insights(Request $request)
     {
         $warehouseId = $request->filled('warehouse_id') ? $request->integer('warehouse_id') : null;
-        $insights = $this->analyticsService->buildDashboardInsights($warehouseId);
+        $cacheKey = 'dashboard:insights:v1:warehouse:'.($warehouseId ?? 'all').':days:30';
+        $insights = Cache::remember(
+            $cacheKey,
+            now()->addSeconds(60),
+            fn () => $this->analyticsService->buildDashboardInsights($warehouseId)
+        );
 
         return $this->successResponse(
             $insights,

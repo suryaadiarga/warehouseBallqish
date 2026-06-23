@@ -1,5 +1,5 @@
-import { MutationReportsPage } from '@/components/modules/inventory/MutationReportsPage';
+import { redirect } from 'next/navigation';
 
 export default function ReportsRoute() {
-  return <MutationReportsPage />;
+  redirect('/dashboard/operations?tab=history');
 }

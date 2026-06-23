@@ -13,8 +13,21 @@ class WarehouseLocation extends Model
         'warehouse_id',
         'code',
         'name',
+        'zone',
+        'aisle',
+        'level',
+        'capacity',
+        'status',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'level' => 'integer',
+            'capacity' => 'integer',
+        ];
+    }
 
     public function warehouse()
     {
@@ -24,5 +37,10 @@ class WarehouseLocation extends Model
     public function productStocks()
     {
         return $this->hasMany(ProductStock::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class)->withTimestamps();
     }
 }

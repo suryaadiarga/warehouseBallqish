@@ -25,6 +25,14 @@ class CategoryController extends Controller
         return $this->successResponse(null, 'Kategori berhasil ditambahkan', 201);
     }
 
+    public function update(StoreCategoryRequest $request, $id)
+    {
+        $category = Category::findOrFail($id);
+        $category->update($request->validated());
+
+        return $this->successResponse($category, 'Kategori berhasil diperbarui');
+    }
+
     public function destroy($id)
     {
         try {

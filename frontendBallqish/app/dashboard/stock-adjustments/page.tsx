@@ -1,5 +1,5 @@
-import { StockAdjustmentsPage } from '@/components/modules/operations/StockAdjustmentsPage';
+import { redirect } from 'next/navigation';
 
 export default function DashboardStockAdjustmentsPage() {
-  return <StockAdjustmentsPage />;
+  redirect('/dashboard/operations?tab=adjustments');
 }
