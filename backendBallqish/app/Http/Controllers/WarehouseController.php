@@ -12,7 +12,7 @@ class WarehouseController extends Controller
     public function index()
     {
         $warehouses = Warehouse::query()
-            ->select(['id', 'name', 'location', 'latitude', 'longitude', 'created_at'])
+            ->select(['id', 'name', 'location', 'created_at'])
             ->withCount('locations as rack_count')
             ->withCount('productStocks as stock_rows_count')
             ->withSum('productStocks as total_quantity', 'quantity')
@@ -60,21 +60,10 @@ class WarehouseController extends Controller
         return $this->successResponse(null, 'Gudang berhasil dihapus');
     }
 
-    public function map()
-    {
-        $warehouses = Warehouse::query()
-            ->select(['id', 'name', 'latitude', 'longitude'])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->get();
-
-        return $this->successResponse($warehouses, 'Data lokasi gudang berhasil diambil');
-    }
-
     public function show($id)
     {
         $warehouse = Warehouse::query()
-            ->select(['id', 'name', 'location', 'latitude', 'longitude', 'created_at'])
+            ->select(['id', 'name', 'location', 'created_at'])
             ->withCount('locations as rack_count')
             ->withCount('productStocks as stock_rows_count')
             ->withSum('productStocks as total_quantity', 'quantity')

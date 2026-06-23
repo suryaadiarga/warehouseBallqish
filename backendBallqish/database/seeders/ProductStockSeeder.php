@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Product;
 use App\Models\ProductStock;
-use App\Models\Warehouse;
-use App\Models\WarehouseLocation;
+use App\Models\StockMutation;
 use Illuminate\Database\Seeder;
 
 class ProductStockSeeder extends Seeder
@@ -13,73 +12,42 @@ class ProductStockSeeder extends Seeder
     public function run(): void
     {
         ProductStock::query()->delete();
+        $latestByScope = [];
 
-        $centralWarehouse = Warehouse::query()->where('name', 'Gudang Pusat')->firstOrFail();
-        $transitWarehouse = Warehouse::query()->where('name', 'Gudang Transit')->firstOrFail();
-        $centralRacks = WarehouseLocation::query()
-            ->where('warehouse_id', $centralWarehouse->id)
-            ->get()
-            ->keyBy('code');
-        $transitRack = WarehouseLocation::query()
-            ->where('warehouse_id', $transitWarehouse->id)
-            ->where('code', 'T3')
-            ->firstOrFail();
-
-        $rackByCategory = [
-            'Sistem Pengereman' => 'A',
-            'Suku Cadang Mesin' => 'B',
-            'Kelistrikan' => 'C',
-            'Ban & Velg' => 'D',
-            'Pelumas & Cairan' => 'E',
-            'Aksesoris Kendaraan' => 'F',
-            'Peralatan Bengkel' => 'G',
-        ];
-        $now = now();
-        $rows = [];
-
-        Product::query()
-            ->with('category:id,name')
-            ->select(['id', 'category_id', 'stock'])
-            ->chunkById(500, function ($products) use (&$rows, $rackByCategory, $centralRacks, $centralWarehouse, $transitWarehouse, $transitRack, $now) {
-                foreach ($products as $product) {
-                    $totalStock = max((int) $product->stock, 0);
-                    $transitQuantity = $totalStock >= 20 ? (int) floor($totalStock * 0.15) : 0;
-                    $centralQuantity = $totalStock - $transitQuantity;
-                    $rackPrefix = $rackByCategory[$product->category?->name] ?? 'B';
-                    $rackCode = $rackPrefix.(($product->id - 1) % 5 + 1);
-                    $centralRack = $centralRacks[$rackCode];
-
-                    $rows[] = [
-                        'product_id' => $product->id,
-                        'warehouse_id' => $centralWarehouse->id,
-                        'warehouse_location_id' => $centralRack->id,
-                        'quantity' => $centralQuantity,
-                        'reserved_quantity' => 0,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+        StockMutation::query()
+            ->where('status', 'approved')
+            ->whereNotNull('warehouse_id')
+            ->whereNotNull('warehouse_location_id')
+            ->orderBy('id')
+            ->select(['id', 'product_id', 'warehouse_id', 'warehouse_location_id', 'after_qty'])
+            ->chunkById(2000, function ($mutations) use (&$latestByScope) {
+                foreach ($mutations as $mutation) {
+                    $key = "{$mutation->product_id}:{$mutation->warehouse_id}:{$mutation->warehouse_location_id}";
+                    $latestByScope[$key] = [
+                        'product_id' => $mutation->product_id,
+                        'warehouse_id' => $mutation->warehouse_id,
+                        'warehouse_location_id' => $mutation->warehouse_location_id,
+                        'quantity' => (int) $mutation->after_qty,
                     ];
-
-                    if ($transitQuantity > 0) {
-                        $rows[] = [
-                            'product_id' => $product->id,
-                            'warehouse_id' => $transitWarehouse->id,
-                            'warehouse_location_id' => $transitRack->id,
-                            'quantity' => $transitQuantity,
-                            'reserved_quantity' => 0,
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
-                    }
-                }
-
-                if (count($rows) >= 1000) {
-                    ProductStock::query()->insert($rows);
-                    $rows = [];
                 }
             });
 
-        if ($rows !== []) {
-            ProductStock::query()->insert($rows);
+        $now = now();
+        foreach (array_chunk(array_values($latestByScope), 1000) as $chunk) {
+            ProductStock::query()->insert(array_map(fn (array $row) => [
+                ...$row,
+                'reserved_quantity' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $chunk));
         }
+
+        Product::query()->select('id')->chunkById(500, function ($products) {
+            foreach ($products as $product) {
+                $product->update([
+                    'stock' => (int) ProductStock::query()->where('product_id', $product->id)->sum('quantity'),
+                ]);
+            }
+        });
     }
 }

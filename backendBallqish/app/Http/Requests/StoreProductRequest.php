@@ -16,6 +16,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'category_id' => ['required', 'exists:categories,id'],
+            'supplier_id' => ['required', 'exists:suppliers,id'],
             'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($this->route('id'))],
             'name' => ['required', 'string', 'max:255'],
             'min_stock_level' => ['required', 'integer', 'min:0'],

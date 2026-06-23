@@ -4,15 +4,13 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { Boxes, Grid3X3, MapPinned, Plus, Warehouse } from 'lucide-react';
+import { Boxes, Grid3X3, Plus, Warehouse } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type WarehouseItem = {
   id: number;
   name: string;
   location?: string | null;
-  latitude?: string | null;
-  longitude?: string | null;
   rack_count?: number;
   stock_rows_count?: number;
   total_quantity?: number | string | null;
@@ -28,8 +26,6 @@ export function WarehouseManagement() {
   const [form, setForm] = useState({
     name: '',
     location: '',
-    latitude: '',
-    longitude: '',
   });
 
   const loadData = async () => {
@@ -58,8 +54,6 @@ export function WarehouseManagement() {
       const response = await api.post<ApiEnvelope<WarehouseItem>>('/warehouses', {
         name: form.name,
         location: form.location || null,
-        latitude: form.latitude ? Number(form.latitude) : null,
-        longitude: form.longitude ? Number(form.longitude) : null,
       });
 
       showToast({
@@ -67,7 +61,7 @@ export function WarehouseManagement() {
         title: 'Gudang ditambahkan',
         description: response.data.message,
       });
-      setForm({ name: '', location: '', latitude: '', longitude: '' });
+      setForm({ name: '', location: '' });
       setShowForm(false);
       await loadData();
     } catch (err: unknown) {
@@ -112,14 +106,6 @@ export function WarehouseManagement() {
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi</label>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.location} onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))} />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Lintang</label>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.latitude} onChange={(e) => setForm((current) => ({ ...current, latitude: e.target.value }))} />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Bujur</label>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.longitude} onChange={(e) => setForm((current) => ({ ...current, longitude: e.target.value }))} />
             </div>
             <div className="md:col-span-2">
               <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
@@ -166,10 +152,6 @@ export function WarehouseManagement() {
                         <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-400">Jumlah</p>
                         <p className="mt-1 text-lg font-black text-slate-800">{Number(warehouse.total_quantity ?? 0).toLocaleString('id-ID')}</p>
                       </div>
-                    </div>
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white">
-                      <MapPinned size={14} />
-                      ID Gudang #{warehouse.id}
                     </div>
                   </div>
                 </div>

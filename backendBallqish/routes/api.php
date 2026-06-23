@@ -12,6 +12,7 @@ use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\StockAuditController;
 use App\Http\Controllers\StockMutationController;
 use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseLocationController;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Master Data Gudang
     Route::get('/warehouses', [WarehouseController::class, 'index']);
     Route::post('/warehouses', [WarehouseController::class, 'store']);
-    Route::get('/warehouses/map', [WarehouseController::class, 'map']);
     Route::get('/warehouses/{id}', [WarehouseController::class, 'show']);
     Route::put('/warehouses/{id}', [WarehouseController::class, 'update']);
     Route::delete('/warehouses/{id}', [WarehouseController::class, 'destroy']);
@@ -48,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/warehouse-locations', [WarehouseLocationController::class, 'store']);
     Route::put('/warehouse-locations/{id}', [WarehouseLocationController::class, 'update']);
     Route::delete('/warehouse-locations/{id}', [WarehouseLocationController::class, 'destroy']);
+
+    Route::get('/suppliers', [SupplierController::class, 'index']);
 
     // Master Data Produk (Sudah Rapi)
     Route::get('/products', [ProductController::class, 'index']);

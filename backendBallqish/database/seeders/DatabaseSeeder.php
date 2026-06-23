@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
             WarehouseLocationSeeder::class,
             SupplierSeeder::class,
             ProductSeeder::class,
-            ProductCategoryNormalizationSeeder::class,
             StockMutationSeeder::class,
             ProductStockSeeder::class,
+            WorkflowDatasetSeeder::class,
         ]);
     }
 }

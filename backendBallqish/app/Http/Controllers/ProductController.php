@@ -12,8 +12,8 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'price'])
-            ->with(['category:id,name']);
+            ->select(['id', 'category_id', 'supplier_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'price'])
+            ->with(['category:id,name', 'supplier:id,name']);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', (int) $request->category_id);
@@ -63,7 +63,7 @@ class ProductController extends Controller
         $product->update($request->validated());
 
         return $this->successResponse(
-            $product->fresh('category:id,name'),
+            $product->fresh(['category:id,name', 'supplier:id,name']),
             'Produk berhasil diperbarui'
         );
     }

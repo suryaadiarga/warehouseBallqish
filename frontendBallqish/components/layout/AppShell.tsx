@@ -33,7 +33,7 @@ const navigation: NavItem[] = [
   { href: '/dashboard/operations', label: 'Operasional Stok', description: 'Mutasi dan transfer', icon: ArrowLeftRight },
   { href: '/dashboard/stock-audits', label: 'Audit Stok', description: 'Penghitungan dan penyesuaian', icon: ClipboardList },
   { href: '/dashboard/analytics', label: 'Analitik Inventaris', description: 'Peringatan dan pergerakan', icon: ChartColumn },
-  { href: '/dashboard/warehouse-management', label: 'Manajemen Gudang', description: 'Gudang, rak, dan peta', icon: Warehouse },
+  { href: '/dashboard/warehouse-management', label: 'Manajemen Gudang', description: 'Gudang dan rak', icon: Warehouse },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
