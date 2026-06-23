@@ -227,7 +227,7 @@ export function MutationsPage() {
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Gudang</label>
               <select value={form.warehouse_location_id} onChange={(e) => setForm((current) => ({ ...current, warehouse_location_id: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-                <option value="">Tanpa lokasi detail</option>
+                <option value="">Pilih rak otomatis</option>
                 {filteredLocations.map((location) => (
                   <option key={location.id} value={location.id}>
                     {location.code} - {location.name}

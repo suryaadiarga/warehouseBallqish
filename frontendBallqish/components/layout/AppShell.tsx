@@ -31,7 +31,7 @@ const navigation: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', description: 'Ringkasan operasional', icon: LayoutDashboard },
   { href: '/dashboard/inventory', label: 'Produk & Stok', description: 'Katalog dan inventory', icon: Boxes },
   { href: '/dashboard/operations', label: 'Operasional Stok', description: 'Mutasi, transfer, koreksi', icon: ArrowLeftRight },
-  { href: '/dashboard/stock-opnames', label: 'Stock Opname', description: 'Pemeriksaan stok fisik', icon: ClipboardList },
+  { href: '/dashboard/stock-audits', label: 'Audit Stok', description: 'Cycle count per rak', icon: ClipboardList },
   { href: '/dashboard/analytics', label: 'Analitik Inventory', description: 'Peringatan dan pergerakan', icon: ChartColumn },
   { href: '/dashboard/warehouse-management', label: 'Manajemen Gudang', description: 'Gudang, rak, dan peta', icon: Warehouse },
 ];

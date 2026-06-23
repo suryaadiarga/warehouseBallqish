@@ -100,15 +100,6 @@ export function StockTransfersPage() {
       return false;
     }
 
-    if (form.from_warehouse_id === form.to_warehouse_id) {
-      showToast({
-        type: 'error',
-        title: 'Gudang tidak valid',
-        description: 'Gudang asal dan gudang tujuan harus berbeda.',
-      });
-      return false;
-    }
-
     if (form.quantity < 1) {
       showToast({
         type: 'error',
@@ -173,7 +164,7 @@ export function StockTransfersPage() {
   if (products.length === 0 || warehouses.length < 2) {
     return (
       <div className="space-y-6">
-        <PageHeader eyebrow="Warehouse Operations" title="Stock Transfers" description="Transfer stok antar gudang secara atomic berdasarkan endpoint backend yang sudah tersedia." />
+        <PageHeader eyebrow="Warehouse Operations" title="Stock Transfers" description="Transfer antar-rak atau antar-gudang dengan pemilihan rak otomatis." />
         <EmptyState title="Referensi transfer belum siap" description="Pastikan minimal ada satu produk dan dua gudang sebelum membuat transfer stok." />
       </div>
     );
@@ -184,7 +175,7 @@ export function StockTransfersPage() {
       <PageHeader
         eyebrow="Warehouse Operations"
         title="Stock Transfers"
-        description="Pindahkan stok antar gudang dalam satu transaksi backend yang atomic. Form ini langsung mengikuti kontrak `/api/stock-transfers`."
+        description="Pindahkan stok antar-rak atau antar-gudang secara atomic. Kosongkan lokasi agar sistem memilih rak asal dan tujuan."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -230,7 +221,7 @@ export function StockTransfersPage() {
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Asal</label>
             <select value={form.from_warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, from_warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="">Tanpa lokasi detail</option>
+              <option value="">Pilih rak otomatis</option>
               {fromLocations.map((location) => (
                 <option key={location.id} value={location.id}>
                   {location.code} - {location.name}
@@ -252,7 +243,7 @@ export function StockTransfersPage() {
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Tujuan</label>
             <select value={form.to_warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, to_warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="">Tanpa lokasi detail</option>
+              <option value="">Pilih rak otomatis</option>
               {toLocations.map((location) => (
                 <option key={location.id} value={location.id}>
                   {location.code} - {location.name}
