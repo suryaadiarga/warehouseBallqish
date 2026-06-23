@@ -29,6 +29,8 @@ class ProductFactory extends Factory
             'name' => $name,
             'stock' => $this->faker->numberBetween(0, 100),
             'min_stock_level' => $this->faker->numberBetween(5, 20),
+            'lead_time_days' => $this->faker->numberBetween(3, 14),
+            'safety_stock' => $this->faker->numberBetween(3, 15),
             'price' => $this->faker->numberBetween(20000, 500000),
         ];
     }

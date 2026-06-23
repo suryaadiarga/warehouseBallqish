@@ -7,9 +7,7 @@ use Illuminate\Http\Request;
 
 class ProductAnalyticsController extends Controller
 {
-    public function __construct(private readonly InventoryAnalyticsService $analyticsService)
-    {
-    }
+    public function __construct(private readonly InventoryAnalyticsService $analyticsService) {}
 
     public function movementAnalysis(Request $request)
     {
@@ -22,7 +20,7 @@ class ProductAnalyticsController extends Controller
             200,
             [
                 'warehouse_id' => $warehouseId,
-                'lookback_days' => 30,
+                'lookback_days' => 90,
             ]
         );
     }

@@ -41,13 +41,13 @@ class StockMutationSeeder extends Seeder
             ->where('code', 'T3')
             ->firstOrFail();
         $rackByCategory = [
-            'Sistem Pengereman' => 'A1',
-            'Aksesoris Kendaraan' => 'A2',
-            'Suku Cadang Mesin' => 'B1',
-            'Kelistrikan' => 'B2',
-            'Ban & Velg' => 'C1',
-            'Pelumas & Cairan' => 'D1',
-            'Peralatan Bengkel' => 'E1',
+            'Sistem Pengereman' => 'A',
+            'Suku Cadang Mesin' => 'B',
+            'Kelistrikan' => 'C',
+            'Ban & Velg' => 'D',
+            'Pelumas & Cairan' => 'E',
+            'Aksesoris Kendaraan' => 'F',
+            'Peralatan Bengkel' => 'G',
         ];
 
         $endDate = CarbonImmutable::now()->startOfMinute();
@@ -78,7 +78,8 @@ class StockMutationSeeder extends Seeder
 
                 $product->update(['stock' => $targetStock]);
                 $runningStock = $openingStock;
-                $centralRackCode = $rackByCategory[$product->category?->name] ?? 'B1';
+                $rackPrefix = $rackByCategory[$product->category?->name] ?? 'B';
+                $centralRackCode = $rackPrefix.(($product->id - 1) % 5 + 1);
                 $centralRack = $centralRacks[$centralRackCode];
 
                 foreach ($events as $eventIndex => $event) {
