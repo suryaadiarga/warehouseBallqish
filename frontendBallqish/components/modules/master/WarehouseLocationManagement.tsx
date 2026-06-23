@@ -4,6 +4,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { formatStatusLabel } from '@/components/ui/StatusBadge';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
 import { Boxes, Grid3X3, Layers3, Pencil, Plus, Trash2, Warehouse as WarehouseIcon } from 'lucide-react';
@@ -174,7 +175,7 @@ export function WarehouseLocationManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Warehouse Layout"
+        eyebrow="Tata Letak Gudang"
         title="Rak & Lokasi Gudang"
         description="Atur zona penyimpanan, kapasitas, dan kategori barang yang diperbolehkan pada setiap rak."
         action={
@@ -196,7 +197,7 @@ export function WarehouseLocationManagement() {
         <MetricCard label="Total Rak" value={locations.length} icon={Grid3X3} description="Seluruh rak dan area transit." />
         <MetricCard label="Rak Aktif" value={locations.filter((item) => item.status === 'active').length} icon={WarehouseIcon} tone="emerald" description="Lokasi yang siap dipakai." />
         <MetricCard label="Kapasitas" value={totalCapacity.toLocaleString('id-ID')} icon={Layers3} tone="sky" description="Total kapasitas unit." />
-        <MetricCard label="Stok Tersimpan" value={totalQuantity.toLocaleString('id-ID')} icon={Boxes} description="Quantity pada seluruh rak." />
+        <MetricCard label="Stok Tersimpan" value={totalQuantity.toLocaleString('id-ID')} icon={Boxes} description="Jumlah stok pada seluruh rak." />
       </div>
 
       {showForm ? (
@@ -222,7 +223,7 @@ export function WarehouseLocationManagement() {
               <select className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
-                <option value="maintenance">Maintenance</option>
+                <option value="maintenance">Pemeliharaan</option>
               </select>
             </label>
             <label className="block text-sm font-bold text-slate-700 xl:col-span-2">
@@ -288,7 +289,7 @@ export function WarehouseLocationManagement() {
                       <p className="mt-1 text-xs text-slate-500">{location.warehouse?.name ?? `Gudang #${location.warehouse_id}`}</p>
                     </div>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${location.status === 'active' ? 'bg-emerald-50 text-emerald-700' : location.status === 'maintenance' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{location.status}</span>
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${location.status === 'active' ? 'bg-emerald-50 text-emerald-700' : location.status === 'maintenance' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{formatStatusLabel(location.status)}</span>
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3">

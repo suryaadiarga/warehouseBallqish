@@ -165,7 +165,7 @@ export function MutationsPage() {
     } catch (err: unknown) {
       showToast({
         type: 'error',
-        title: dialog.mode === 'approve' ? 'Approve gagal' : 'Reject gagal',
+        title: dialog.mode === 'approve' ? 'Persetujuan gagal' : 'Penolakan gagal',
         description: extractApiErrorMessage(err, 'Backend menolak aksi mutasi ini.'),
       });
     } finally {
@@ -174,7 +174,7 @@ export function MutationsPage() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat mutasi stok" description="Mengambil draft, approved mutation, produk, gudang, dan lokasi." />;
+    return <LoadingState title="Memuat mutasi stok" description="Mengambil draf, mutasi yang disetujui, produk, gudang, dan lokasi." />;
   }
 
   if (error) {
@@ -184,9 +184,9 @@ export function MutationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inventory Flow"
-        title="Stock Mutations"
-        description="Buat draft mutasi barang masuk/keluar, lalu lakukan approval atau reject langsung dari workspace inventory."
+        eyebrow="Alur Inventaris"
+        title="Mutasi Stok"
+        description="Buat draf mutasi barang masuk/keluar, lalu setujui atau tolak langsung dari ruang kerja inventaris."
         action={
           <button
             type="button"
@@ -243,12 +243,12 @@ export function MutationsPage() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Quantity</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Jumlah</label>
               <input type="number" min={1} value={form.quantity} onChange={(e) => setForm((current) => ({ ...current, quantity: Number(e.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
             </div>
             <div className="xl:col-span-3">
               <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
-              <textarea value={form.note} onChange={(e) => setForm((current) => ({ ...current, note: e.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Tambahkan note bila diperlukan" />
+              <textarea value={form.note} onChange={(e) => setForm((current) => ({ ...current, note: e.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Tambahkan catatan bila diperlukan" />
             </div>
             <div className="md:col-span-2 xl:col-span-3">
               <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
@@ -262,12 +262,12 @@ export function MutationsPage() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Daftar Mutasi</h3>
-          <p className="mt-1 text-sm text-slate-500">List memakai endpoint report mutation karena backend belum menyediakan endpoint GET khusus mutasi. Konsekuensinya, detail gudang dan lokasi tidak selalu ikut dikirim pada payload daftar.</p>
+          <p className="mt-1 text-sm text-slate-500">Daftar memakai endpoint laporan mutasi karena backend belum menyediakan endpoint GET khusus mutasi. Konsekuensinya, detail gudang dan lokasi tidak selalu dikirim pada data daftar.</p>
         </div>
 
         {mutations.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada mutasi" description="Buat draft mutasi pertama untuk mencatat pergerakan stok." />
+            <EmptyState title="Belum ada mutasi" description="Buat draf mutasi pertama untuk mencatat pergerakan stok." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -276,8 +276,8 @@ export function MutationsPage() {
                 <tr>
                   <th className="px-6 py-4">Tanggal</th>
                   <th className="px-6 py-4">Produk</th>
-                  <th className="px-6 py-4">Movement</th>
-                  <th className="px-6 py-4">Qty</th>
+                  <th className="px-6 py-4">Pergerakan</th>
+                  <th className="px-6 py-4">Jumlah</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Aksi</th>
                 </tr>
@@ -301,8 +301,8 @@ export function MutationsPage() {
                     <td className="px-6 py-4">
                       {mutation.status === 'approved' ? <StatusBadge label="approved" tone="safe" /> : <StatusBadge label="draft" tone="warning" />}
                       <div className="mt-2 text-xs text-slate-500">
-                        <p>By: {mutation.user?.name ?? '-'}</p>
-                        <p>Approver: {mutation.approver?.name ?? '-'}</p>
+                        <p>Oleh: {mutation.user?.name ?? '-'}</p>
+                        <p>Penyetuju: {mutation.approver?.name ?? '-'}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -314,7 +314,7 @@ export function MutationsPage() {
                             className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 transition hover:bg-emerald-100"
                           >
                             <CheckCircle2 size={16} />
-                            <span>Approve</span>
+                            <span>Setujui</span>
                           </button>
                           <button
                             type="button"
@@ -322,7 +322,7 @@ export function MutationsPage() {
                             className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 font-semibold text-rose-700 transition hover:bg-rose-100"
                           >
                             <XCircle size={16} />
-                            <span>Reject</span>
+                            <span>Tolak</span>
                           </button>
                         </div>
                       ) : (
@@ -339,13 +339,13 @@ export function MutationsPage() {
 
       <ConfirmDialog
         open={Boolean(dialog)}
-        title={dialog?.mode === 'approve' ? 'Approve mutasi ini?' : 'Reject draft mutasi ini?'}
+        title={dialog?.mode === 'approve' ? 'Setujui mutasi ini?' : 'Tolak draf mutasi ini?'}
         description={
           dialog?.mode === 'approve'
-            ? 'Approval akan menjalankan update stok di backend sesuai gudang dan lokasi yang dipilih.'
-            : 'Reject akan menghapus draft mutasi dari sistem backend.'
+            ? 'Persetujuan akan memperbarui stok di backend sesuai gudang dan lokasi yang dipilih.'
+            : 'Penolakan akan menghapus draf mutasi dari sistem backend.'
         }
-        confirmLabel={dialog?.mode === 'approve' ? 'Approve Sekarang' : 'Reject Draft'}
+        confirmLabel={dialog?.mode === 'approve' ? 'Setujui Sekarang' : 'Tolak Draf'}
         tone={dialog?.mode === 'approve' ? 'primary' : 'danger'}
         loading={dialogLoading}
         onCancel={() => setDialog(null)}

@@ -9,6 +9,28 @@ Aplikasi **Warehouse Management System** yang terdiri dari:
 
 ## ⚡ Quick Start
 
+### Jalankan otomatis (Windows)
+
+Setelah repository selesai di-clone, jalankan dari root project:
+
+```powershell
+.\start.cmd
+```
+
+Script akan otomatis:
+
+- memasang dependency Composer jika `vendor/` belum tersedia;
+- memasang dependency npm jika `node_modules/` belum tersedia;
+- membuat `.env` dan Laravel application key jika belum tersedia;
+- membuat direktori runtime Laravel; dan
+- menjalankan backend di port `8080` serta frontend di port `3000`.
+
+Untuk memaksa instalasi ulang dependency:
+
+```powershell
+.\start.cmd -Install
+```
+
 ### Prasyarat
 
 - Git

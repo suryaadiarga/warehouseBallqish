@@ -27,7 +27,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <p className="text-lg font-black text-slate-900">Memverifikasi sesi Anda</p>
-            <p className="mt-1 text-sm text-slate-500">Frontend sedang menyinkronkan autentikasi dengan backend WMS.</p>
+            <p className="mt-1 text-sm text-slate-500">Aplikasi sedang menyinkronkan autentikasi dengan server WMS.</p>
           </div>
         </div>
       </div>

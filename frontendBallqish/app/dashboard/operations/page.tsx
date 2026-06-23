@@ -6,7 +6,7 @@ import { ModuleTabs } from '@/components/ui/ModuleTabs';
 const tabs = [
   { id: 'mutations', label: 'Mutasi', description: 'Barang masuk & keluar' },
   { id: 'transfers', label: 'Transfer', description: 'Antar-rak dan gudang' },
-  { id: 'history', label: 'Riwayat & Export', description: 'Audit transaksi' },
+  { id: 'history', label: 'Riwayat & Ekspor', description: 'Audit transaksi' },
 ];
 
 export default async function OperationsWorkspace({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
