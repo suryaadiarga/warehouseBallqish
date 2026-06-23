@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -11,11 +12,17 @@ class BallqishApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ballqish WMS',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      home: const SessionGate(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: AppColors.slate50,
+      ),
+      child: MaterialApp(
+        title: 'Ballqish WMS',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        home: const SessionGate(),
+      ),
     );
   }
 }
@@ -61,7 +68,9 @@ class _SessionGateState extends State<SessionGate> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppColors.sky600)),
+      );
     }
 
     return _authenticated ? const MainNavigationScreen() : const LoginScreen();

@@ -3,7 +3,6 @@
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { InventoryMovementBadge } from '@/components/ui/InventoryMovementBadge';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
@@ -17,20 +16,11 @@ type WarehouseOption = { id: number; name: string };
 type WarehouseLocationOption = { id: number; warehouse_id: number; code: string; name: string; quantity?: number; capacity?: number | null; total_quantity?: number | string | null; status?: string; categories?: Array<{ id: number; name: string }> };
 type ProductStockPosition = { id: number; warehouse_id: number; warehouse_location_id: number | null; quantity: number; warehouse?: WarehouseOption; warehouse_location?: WarehouseLocationOption | null };
 
-type TransferMutation = {
-  id: number;
-  reference_number?: string | null;
-  type: 'in' | 'out';
-  quantity: number;
-  before_qty?: number | null;
-  after_qty?: number | null;
-  warehouse?: { id: number; name: string } | null;
-  warehouseLocation?: { id: number; code: string; name: string } | null;
-};
-
 type TransferResult = {
-  transfer_id: string;
-  mutations: TransferMutation[];
+  id: number;
+  transfer_number: string;
+  status: string;
+  quantity: number;
 };
 
 export function StockTransfersPage() {
@@ -211,13 +201,13 @@ export function StockTransfersPage() {
       <PageHeader
         eyebrow="Operasional Gudang"
         title="Transfer Stok"
-        description="Pindahkan stok antar-rak atau antar-gudang secara atomic. Kosongkan lokasi agar sistem memilih rak asal dan tujuan."
+        description="Ajukan transfer antar-rak atau antar-gudang. Stok asal berkurang saat dikirim dan stok tujuan bertambah setelah diterima."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
         <MetricCard label="Produk Tersedia" value={products.length} icon={PackageSearch} description="Produk yang bisa dipilih untuk transfer." />
         <MetricCard label="Gudang" value={warehouses.length} icon={Warehouse} tone="sky" description="Gudang sumber dan tujuan transfer." />
-        <MetricCard label="Hasil Terakhir" value={result?.transfer_id ?? '-'} icon={ArrowLeftRight} tone="emerald" />
+        <MetricCard label="Hasil Terakhir" value={result?.transfer_number ?? '-'} icon={ArrowLeftRight} tone="emerald" />
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
@@ -302,51 +292,16 @@ export function StockTransfersPage() {
       </section>
 
       {result ? (
-        <section className="surface-card rounded-[28px] overflow-hidden">
-          <div className="border-b border-slate-100 px-6 py-5">
-            <h3 className="text-lg font-black text-slate-900">Hasil Transfer</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
-                <tr>
-                  <th className="px-6 py-4">Referensi</th>
-                  <th className="px-6 py-4">Pergerakan</th>
-                  <th className="px-6 py-4">Gudang</th>
-                  <th className="px-6 py-4">Sebelum</th>
-                  <th className="px-6 py-4">Jumlah</th>
-                  <th className="px-6 py-4">Sesudah</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {result.mutations.map((mutation) => (
-                  <tr key={mutation.id} className="hover:bg-slate-50/80">
-                    <td className="px-6 py-4">
-                      <p className="font-mono text-xs text-slate-700">{mutation.reference_number ?? '-'}</p>
-                      <p className="mt-1 text-xs text-slate-500">{result.transfer_id}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <InventoryMovementBadge type={mutation.type} />
-                        <InventoryMovementBadge source="transfer" />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      <p className="font-semibold text-slate-900">{mutation.warehouse?.name ?? '-'}</p>
-                      <p className="mt-1 text-xs text-slate-500">{mutation.warehouseLocation ? `${mutation.warehouseLocation.code} - ${mutation.warehouseLocation.name}` : 'Tanpa lokasi detail'}</p>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-700">{mutation.before_qty ?? '-'}</td>
-                    <td className="px-6 py-4 font-black text-slate-900">{mutation.quantity}</td>
-                    <td className="px-6 py-4 font-bold text-emerald-700">{mutation.after_qty ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <section className="surface-card rounded-[28px] p-6">
+          <h3 className="text-lg font-black text-slate-900">Transfer berhasil diajukan</h3>
+          <p className="mt-2 font-mono text-sm text-slate-700">{result.transfer_number}</p>
+          <p className="mt-3 text-sm text-slate-600">
+            Status: <span className="font-bold text-amber-700">{result.status}</span>. Transfer menunggu persetujuan sebelum barang dikirim.
+          </p>
         </section>
       ) : null}
 
-      <ConfirmDialog open={confirmOpen} title="Proses transfer stok?" description="Transfer akan membuat mutasi keluar dan masuk sekaligus. Backend akan menolak jika stok asal tidak mencukupi." confirmLabel="Ya, Proses Transfer" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitTransfer()} />
+      <ConfirmDialog open={confirmOpen} title="Ajukan transfer stok?" description="Transfer dibuat dengan status pending. Stok belum berubah sampai proses pengiriman dimulai." confirmLabel="Ya, Ajukan Transfer" loading={submitting} onCancel={() => setConfirmOpen(false)} onConfirm={() => void submitTransfer()} />
     </div>
   );
 }

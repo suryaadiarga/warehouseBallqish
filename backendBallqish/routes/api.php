@@ -69,6 +69,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/mutations/{id}/approve', [StockMutationController::class, 'approve']);
     Route::delete('/mutations/{id}/reject', [StockMutationController::class, 'reject']);
     Route::post('/stock-transfers', [StockTransferController::class, 'store']);
+    Route::get('/stock-transfers', [StockTransferController::class, 'index']);
+    Route::get('/stock-transfers/{stockTransfer}', [StockTransferController::class, 'show']);
+    Route::put('/stock-transfers/{stockTransfer}/status', [StockTransferController::class, 'updateStatus']);
     Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
 
     // Audit Stok per rak
@@ -79,4 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reports
     Route::get('/reports/mutations', [ReportController::class, 'mutationHistory']);
+
+    Route::get('/notifications', [AuthController::class, 'notifications']);
+    Route::put('/notifications/{notificationId}/read', [AuthController::class, 'readNotification']);
+    Route::put('/notifications/read-all', [AuthController::class, 'readAllNotifications']);
 });

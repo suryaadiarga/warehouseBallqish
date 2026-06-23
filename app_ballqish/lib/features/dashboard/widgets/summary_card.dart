@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class SummaryCard extends StatelessWidget {
   const SummaryCard({
     super.key,
@@ -35,7 +37,15 @@ class SummaryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    title.toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.slate400,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     value,

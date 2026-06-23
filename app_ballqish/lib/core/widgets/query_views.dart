@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key, this.message = 'Memuat data...'});
   final String message;
@@ -12,7 +14,7 @@ class LoadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(),
+            const CircularProgressIndicator(color: AppColors.sky600),
             const SizedBox(height: 14),
             Text(message),
           ],
@@ -38,13 +40,22 @@ class EmptyView extends StatelessWidget {
             Icon(
               Icons.inventory_2_outlined,
               size: 56,
-              color: Colors.grey.shade500,
+              color: AppColors.slate400,
             ),
             const SizedBox(height: 12),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
             if (message != null) ...[
               const SizedBox(height: 6),
-              Text(message!, textAlign: TextAlign.center),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.slate500),
+              ),
             ],
           ],
         ),

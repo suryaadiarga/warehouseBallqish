@@ -36,17 +36,28 @@ class ExistingWorkflowAutomationTest extends TestCase
     {
         [$user, $product, $warehouse, $source, $destination] = $this->fixture();
 
-        $result = app(StockMutationService::class)->createTransfer([
+        $service = app(StockMutationService::class);
+        $transfer = $service->createTransfer([
             'product_id' => $product->id,
             'from_warehouse_id' => $warehouse->id,
             'to_warehouse_id' => $warehouse->id,
             'quantity' => 4,
         ], $user->id, $user->role);
 
-        $this->assertSame($source->id, $result['mutations'][0]->warehouse_location_id);
-        $this->assertSame($destination->id, $result['mutations'][1]->warehouse_location_id);
+        $this->assertSame('pending', $transfer->status);
+        $this->assertSame($source->id, $transfer->from_warehouse_location_id);
+        $this->assertSame($destination->id, $transfer->to_warehouse_location_id);
+        $this->assertDatabaseHas('product_stocks', ['product_id' => $product->id, 'warehouse_location_id' => $source->id, 'quantity' => 10]);
+
+        $transfer = $service->updateTransferStatus($transfer, 'approved', [], $user->id, $user->role);
+        $transfer = $service->updateTransferStatus($transfer, 'in_transit', [], $user->id, $user->role);
         $this->assertDatabaseHas('product_stocks', ['product_id' => $product->id, 'warehouse_location_id' => $source->id, 'quantity' => 6]);
+
+        $transfer = $service->updateTransferStatus($transfer, 'arrived', [], $user->id, $user->role);
+        $transfer = $service->updateTransferStatus($transfer, 'completed', ['received_quantity' => 4], $user->id, $user->role);
+        $this->assertSame('completed', $transfer->status);
         $this->assertDatabaseHas('product_stocks', ['product_id' => $product->id, 'warehouse_location_id' => $destination->id, 'quantity' => 4]);
+        $this->assertDatabaseCount('stock_transfer_status_histories', 5);
     }
 
     public function test_adjustment_selects_rack_and_applies_mutation_automatically(): void

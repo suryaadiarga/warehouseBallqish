@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
-import '../../categories/screens/category_list_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
-import '../../products/screens/product_list_screen.dart';
-import '../../warehouse_locations/screens/warehouse_location_list_screen.dart';
-import '../../warehouses/screens/warehouse_list_screen.dart';
+import '../../notifications/screens/notification_screen.dart';
+import '../../transfers/screens/transfer_list_screen.dart';
+import 'more_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -22,11 +22,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final _pages = const [
     DashboardScreen(),
-    ProductListScreen(),
-    CategoryListScreen(),
-    WarehouseListScreen(),
-    WarehouseLocationListScreen(),
     InventoryScreen(),
+    TransferListScreen(),
+    MoreScreen(),
   ];
 
   Future<void> _logout() async {
@@ -42,47 +40,88 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ballqish WMS'),
+        titleSpacing: 16,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.warehouse_outlined, color: AppColors.sky600, size: 25),
+            SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'BALLQISH',
+                  style: TextStyle(
+                    color: AppColors.slate400,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                    height: 1,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Sistem Gudang',
+                  style: TextStyle(
+                    color: AppColors.slate900,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.slate200),
+        ),
         actions: [
           IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.slate700,
+            ),
+            tooltip: 'Notifikasi',
+          ),
+          IconButton(
             onPressed: _logout,
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Color(0xFFE11D48)),
             tooltip: 'Logout',
           ),
         ],
       ),
       body: _pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2),
-            label: 'Produk',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.category_outlined),
-            selectedIcon: Icon(Icons.category),
-            label: 'Kategori',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.warehouse_outlined),
-            selectedIcon: Icon(Icons.warehouse),
-            label: 'Gudang',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view),
-            label: 'Lokasi',
-          ),
-          NavigationDestination(icon: Icon(Icons.swap_horiz), label: 'Stok'),
-        ],
+      bottomNavigationBar: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: AppColors.slate200)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (value) => setState(() => _index = value),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(icon: Icon(Icons.swap_horiz), label: 'Stok'),
+            NavigationDestination(
+              icon: Icon(Icons.local_shipping_outlined),
+              selectedIcon: Icon(Icons.local_shipping),
+              label: 'Transfer',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.more_horiz),
+              label: 'Lainnya',
+            ),
+          ],
+        ),
       ),
     );
   }

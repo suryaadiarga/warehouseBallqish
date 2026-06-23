@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMutation;
+use App\Models\StockTransfer;
+use App\Models\User;
 use App\Models\WarehouseLocation;
+use App\Notifications\StockTransferStatusChanged;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -80,13 +83,11 @@ class StockMutationService
         });
     }
 
-    public function createTransfer(array $data, int $userId, string $userRole): array
+    public function createTransfer(array $data, int $userId, string $userRole): StockTransfer
     {
         $this->assertPrivilegedRole($userRole);
 
         return DB::transaction(function () use ($data, $userId) {
-            $transferId = 'TRF-'.Str::upper(Str::random(10));
-            $note = $data['note'] ?? null;
             $fromLocationId = $data['from_warehouse_location_id'] ?? $this->selectAutomaticLocation(
                 $data['product_id'], $data['from_warehouse_id'], 'out', $data['quantity']
             );
@@ -99,54 +100,226 @@ class StockMutationService
                 throw new Exception('Rak asal dan tujuan transfer harus berbeda.', 422);
             }
 
-            $outMutation = StockMutation::create([
+            $this->ensureTransferSourceStock(
+                $data['product_id'],
+                $data['from_warehouse_id'],
+                $fromLocationId,
+                $data['quantity']
+            );
+            $this->ensureInboundLocationAcceptsProduct(
+                Product::findOrFail($data['product_id']),
+                $toLocationId,
+                $data['quantity']
+            );
+
+            $transfer = StockTransfer::create([
+                'transfer_number' => $this->generateReferenceNumber('TRF'),
                 'product_id' => $data['product_id'],
-                'warehouse_id' => $data['from_warehouse_id'],
-                'warehouse_location_id' => $fromLocationId,
                 'from_warehouse_id' => $data['from_warehouse_id'],
                 'to_warehouse_id' => $data['to_warehouse_id'],
-                'user_id' => $userId,
-                'approved_by' => $userId,
-                'reference_number' => $this->generateReferenceNumber('TRF-OUT'),
-                'mutation_source' => 'transfer',
-                'transfer_id' => $transferId,
-                'type' => 'out',
+                'from_warehouse_location_id' => $fromLocationId,
+                'to_warehouse_location_id' => $toLocationId,
+                'created_by' => $userId,
+                'updated_by' => $userId,
+                'status' => 'pending',
                 'quantity' => $data['quantity'],
-                'status' => 'draft',
-                'note' => $note,
-                'reason' => 'Transfer stok antar gudang',
+                'estimated_arrival_at' => $data['estimated_arrival_at'] ?? null,
+                'note' => $data['note'] ?? null,
             ]);
 
-            $this->applyApprovedMutation($outMutation, $userId);
-
-            $inMutation = StockMutation::create([
-                'product_id' => $data['product_id'],
-                'warehouse_id' => $data['to_warehouse_id'],
-                'warehouse_location_id' => $toLocationId,
-                'from_warehouse_id' => $data['from_warehouse_id'],
-                'to_warehouse_id' => $data['to_warehouse_id'],
+            $transfer->histories()->create([
                 'user_id' => $userId,
-                'approved_by' => $userId,
-                'reference_number' => $this->generateReferenceNumber('TRF-IN'),
-                'mutation_source' => 'transfer',
-                'transfer_id' => $transferId,
-                'type' => 'in',
-                'quantity' => $data['quantity'],
-                'status' => 'draft',
-                'note' => $note,
-                'reason' => 'Transfer stok antar gudang',
+                'from_status' => null,
+                'to_status' => 'pending',
+                'note' => $data['note'] ?? null,
+                'created_at' => now(),
             ]);
 
-            $this->applyApprovedMutation($inMutation, $userId);
+            $this->notifyTransfer($transfer, 'Transfer baru menunggu persetujuan');
 
-            return [
-                'transfer_id' => $transferId,
-                'mutations' => [
-                    $outMutation->fresh(['product', 'warehouse', 'warehouseLocation', 'fromWarehouse', 'toWarehouse']),
-                    $inMutation->fresh(['product', 'warehouse', 'warehouseLocation', 'fromWarehouse', 'toWarehouse']),
-                ],
-            ];
+            return $this->loadTransfer($transfer);
         });
+    }
+
+    public function listTransfers(?string $status = null)
+    {
+        return StockTransfer::query()
+            ->with($this->transferRelations())
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->get();
+    }
+
+    public function loadTransfer(StockTransfer $transfer): StockTransfer
+    {
+        return $transfer->load($this->transferRelations());
+    }
+
+    public function updateTransferStatus(
+        StockTransfer $transfer,
+        string $nextStatus,
+        array $data,
+        int $userId,
+        string $userRole
+    ): StockTransfer {
+        $this->assertPrivilegedRole($userRole);
+
+        return DB::transaction(function () use ($transfer, $nextStatus, $data, $userId) {
+            $transfer = StockTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
+            $fromStatus = $transfer->status;
+            $allowed = [
+                'pending' => ['approved', 'rejected', 'cancelled'],
+                'approved' => ['in_transit', 'cancelled'],
+                'in_transit' => ['arrived', 'discrepancy'],
+                'arrived' => ['completed', 'discrepancy'],
+                'discrepancy' => ['completed'],
+            ];
+
+            if (! in_array($nextStatus, $allowed[$fromStatus] ?? [], true)) {
+                throw new Exception("Status {$fromStatus} tidak dapat diubah menjadi {$nextStatus}.", 422);
+            }
+
+            $updates = [
+                'status' => $nextStatus,
+                'updated_by' => $userId,
+            ];
+
+            if ($nextStatus === 'approved') {
+                $this->ensureTransferSourceStock(
+                    $transfer->product_id,
+                    $transfer->from_warehouse_id,
+                    $transfer->from_warehouse_location_id,
+                    $transfer->quantity
+                );
+                $updates['approved_at'] = now();
+            }
+
+            if ($nextStatus === 'in_transit') {
+                $outMutation = $this->createTransferMutation($transfer, 'out', $transfer->quantity, $userId);
+                $updates['out_mutation_id'] = $outMutation->id;
+                $updates['departed_at'] = now();
+            }
+
+            if (in_array($nextStatus, ['arrived', 'discrepancy'], true)) {
+                $updates['arrived_at'] = now();
+            }
+
+            if ($nextStatus === 'discrepancy') {
+                $updates['received_quantity'] = (int) $data['received_quantity'];
+                $updates['discrepancy_note'] = $data['note'];
+            }
+
+            if ($nextStatus === 'completed') {
+                $receivedQuantity = array_key_exists('received_quantity', $data)
+                    ? (int) $data['received_quantity']
+                    : ($transfer->received_quantity ?? $transfer->quantity);
+
+                if ($receivedQuantity < 0) {
+                    throw new Exception('Jumlah diterima tidak boleh negatif.', 422);
+                }
+
+                if ($receivedQuantity > 0) {
+                    $this->ensureInboundLocationAcceptsProduct(
+                        Product::findOrFail($transfer->product_id),
+                        $transfer->to_warehouse_location_id,
+                        $receivedQuantity
+                    );
+                    $inMutation = $this->createTransferMutation($transfer, 'in', $receivedQuantity, $userId);
+                    $updates['in_mutation_id'] = $inMutation->id;
+                }
+                $updates['received_quantity'] = $receivedQuantity;
+                $updates['completed_at'] = now();
+            }
+
+            $transfer->update($updates);
+            $transfer->histories()->create([
+                'user_id' => $userId,
+                'from_status' => $fromStatus,
+                'to_status' => $nextStatus,
+                'note' => $data['note'] ?? null,
+                'created_at' => now(),
+            ]);
+
+            $this->notifyTransfer($transfer->fresh(), $this->transferStatusTitle($nextStatus));
+
+            return $this->loadTransfer($transfer->fresh());
+        });
+    }
+
+    private function createTransferMutation(StockTransfer $transfer, string $type, int $quantity, int $userId): StockMutation
+    {
+        $isOutbound = $type === 'out';
+        $mutation = StockMutation::create([
+            'product_id' => $transfer->product_id,
+            'warehouse_id' => $isOutbound ? $transfer->from_warehouse_id : $transfer->to_warehouse_id,
+            'warehouse_location_id' => $isOutbound ? $transfer->from_warehouse_location_id : $transfer->to_warehouse_location_id,
+            'from_warehouse_id' => $transfer->from_warehouse_id,
+            'to_warehouse_id' => $transfer->to_warehouse_id,
+            'user_id' => $userId,
+            'approved_by' => $userId,
+            'reference_number' => $this->generateReferenceNumber($isOutbound ? 'TRF-OUT' : 'TRF-IN'),
+            'mutation_source' => 'transfer',
+            'transfer_id' => $transfer->transfer_number,
+            'type' => $type,
+            'quantity' => $quantity,
+            'status' => 'draft',
+            'note' => $transfer->note,
+            'reason' => 'Transfer stok antar gudang',
+        ]);
+        $this->applyApprovedMutation($mutation, $userId);
+
+        return $mutation;
+    }
+
+    private function ensureTransferSourceStock(int $productId, int $warehouseId, int $locationId, int $quantity): void
+    {
+        $available = (int) ProductStock::query()
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('warehouse_location_id', $locationId)
+            ->value('quantity');
+
+        if ($available < $quantity) {
+            throw new Exception('Stok pada rak asal tidak mencukupi.', 422);
+        }
+    }
+
+    private function transferRelations(): array
+    {
+        return [
+            'product:id,name,sku',
+            'fromWarehouse:id,name',
+            'toWarehouse:id,name',
+            'fromLocation:id,warehouse_id,code,name',
+            'toLocation:id,warehouse_id,code,name',
+            'creator:id,name',
+            'updater:id,name',
+            'histories' => fn ($query) => $query->with('user:id,name')->orderBy('created_at'),
+        ];
+    }
+
+    private function notifyTransfer(StockTransfer $transfer, string $title): void
+    {
+        $transfer->loadMissing(['product:id,name', 'fromWarehouse:id,name', 'toWarehouse:id,name']);
+        $message = "{$transfer->transfer_number}: {$transfer->product->name} dari {$transfer->fromWarehouse->name} ke {$transfer->toWarehouse->name}.";
+        User::query()
+            ->whereIn('role', ['admin_gudang', 'superadmin', 'super_admin'])
+            ->get()
+            ->each->notify(new StockTransferStatusChanged($transfer, $title, $message));
+    }
+
+    private function transferStatusTitle(string $status): string
+    {
+        return match ($status) {
+            'approved' => 'Transfer disetujui',
+            'in_transit' => 'Barang sedang dalam perjalanan',
+            'arrived' => 'Barang sudah sampai',
+            'completed' => 'Transfer selesai',
+            'rejected' => 'Transfer ditolak',
+            'cancelled' => 'Transfer dibatalkan',
+            'discrepancy' => 'Ada selisih pada transfer',
+            default => 'Status transfer diperbarui',
+        };
     }
 
     public function createAdjustment(array $data, int $userId, string $userRole): StockMutation

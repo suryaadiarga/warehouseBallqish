@@ -27,8 +27,8 @@ class AppButton extends StatelessWidget {
           : Icon(icon ?? Icons.check),
       label: Text(label),
       style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        minimumSize: const Size.fromHeight(56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
