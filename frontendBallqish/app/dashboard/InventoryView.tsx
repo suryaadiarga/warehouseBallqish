@@ -8,7 +8,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
 
     // State Produk
     const [showProductForm, setShowProductForm] = useState(false);
-    const [productForm, setProductForm] = useState({ name: '', sku: '', barcode: '', category_id: '', min_stock_level: 10, price: 0 });
+    const [productForm, setProductForm] = useState({ name: '', sku: '', category_id: '', min_stock_level: 10, price: '' });
 
     // State Kategori
     const [showCatForm, setShowCatForm] = useState(false);
@@ -21,7 +21,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
         try {
             await api.post('/products', productForm);
             setShowProductForm(false);
-            setProductForm({ name: '', sku: '', barcode: '', category_id: '', min_stock_level: 10, price: 0 });
+            setProductForm({ name: '', sku: '', category_id: '', min_stock_level: 10, price: '' });
             onRefresh();
             alert("Produk berhasil ditambahkan!");
         } catch (err: any) {
@@ -140,8 +140,8 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                                     <input type="text" required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.sku} onChange={e => setProductForm({...productForm, sku: e.target.value})} />
                                 </div>
                                 <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Barcode (Opsional)</label>
-                                    <input type="text" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.barcode} onChange={e => setProductForm({...productForm, barcode: e.target.value})} />
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Harga</label>
+                                    <input type="number" required min="0" step="1" placeholder="Masukkan harga" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.price} onFocus={event => event.currentTarget.select()} onChange={e => setProductForm({...productForm, price: e.target.value.replace(/^0+(?=\d)/, '')})} />
                                 </div>
                                 <div className="col-span-1">
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Batas Kritis Stok</label>
@@ -158,7 +158,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500">
                                 <tr>
-                                    <th className="px-6 py-4">SKU / Barcode</th>
+                                    <th className="px-6 py-4">SKU</th>
                                     <th className="px-6 py-4">Nama Produk</th>
                                     <th className="px-6 py-4">Kategori</th>
                                     <th className="px-6 py-4 text-center">Stok</th>
@@ -177,7 +177,6 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                                         <tr key={p.id} className="hover:bg-slate-50">
                                             <td className="px-6 py-4 font-mono">
                                                 <span className="text-blue-600 font-bold block">{p.sku}</span>
-                                                <span className="text-slate-400 text-xs">{p.barcode || '-'}</span>
                                             </td>
                                             <td className="px-6 py-4 font-bold">{p.name}</td>
                                             <td className="px-6 py-4">{p.category?.name}</td>

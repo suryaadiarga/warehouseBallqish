@@ -36,7 +36,7 @@ export function StockAuditsPage() {
         api.get<ApiEnvelope<Audit[]>>('/stock-audits'),
       ]);
       setWarehouses(w.data.data); setLocations(l.data.data); setAudits(a.data.data);
-      setActiveId((current) => current ?? a.data.data.find((item) => item.status !== 'completed')?.id ?? a.data.data[0]?.id ?? null);
+      setActiveId((current) => current ?? a.data.data.find((item) => item.status === 'counting' || item.status === 'review')?.id ?? a.data.data.find((item) => item.status !== 'cancelled')?.id ?? null);
     } catch (err) { setError(extractApiErrorMessage(err, 'Audit Stok gagal dimuat.')); }
     finally { setLoading(false); }
   };

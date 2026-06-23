@@ -26,13 +26,13 @@ class ProductStockSeeder extends Seeder
             ->firstOrFail();
 
         $rackByCategory = [
-            'Sistem Pengereman' => 'A1',
-            'Aksesoris Kendaraan' => 'A2',
-            'Suku Cadang Mesin' => 'B1',
-            'Kelistrikan' => 'B2',
-            'Ban & Velg' => 'C1',
-            'Pelumas & Cairan' => 'D1',
-            'Peralatan Bengkel' => 'E1',
+            'Sistem Pengereman' => 'A',
+            'Suku Cadang Mesin' => 'B',
+            'Kelistrikan' => 'C',
+            'Ban & Velg' => 'D',
+            'Pelumas & Cairan' => 'E',
+            'Aksesoris Kendaraan' => 'F',
+            'Peralatan Bengkel' => 'G',
         ];
         $now = now();
         $rows = [];
@@ -45,7 +45,8 @@ class ProductStockSeeder extends Seeder
                     $totalStock = max((int) $product->stock, 0);
                     $transitQuantity = $totalStock >= 20 ? (int) floor($totalStock * 0.15) : 0;
                     $centralQuantity = $totalStock - $transitQuantity;
-                    $rackCode = $rackByCategory[$product->category?->name] ?? 'B1';
+                    $rackPrefix = $rackByCategory[$product->category?->name] ?? 'B';
+                    $rackCode = $rackPrefix.(($product->id - 1) % 5 + 1);
                     $centralRack = $centralRacks[$rackCode];
 
                     $rows[] = [

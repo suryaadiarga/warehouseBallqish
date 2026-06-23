@@ -49,6 +49,6 @@ class InventoryAnalyticsServiceTest extends TestCase
 
         $this->assertCount(10, $analysis);
         $this->assertLessThanOrEqual(3, $queryCount);
-        $this->assertSame(1.0, $analysis->firstWhere('product_id', $products->first()->id)['avg_daily_usage']);
+        $this->assertSame(1, $analysis->firstWhere('product_id', $products->first()->id)['avg_daily_usage']);
     }
 }

@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\WarehouseLocation;
+use Database\Seeders\CategorySeeder;
+use Database\Seeders\WarehouseLocationSeeder;
+use Database\Seeders\WarehouseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -58,5 +62,15 @@ class WarehouseRackTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.rack_count', 1)
             ->assertJsonPath('data.locations.0.code', 'B1');
+    }
+
+    public function test_seeded_central_racks_use_five_racks_per_category(): void
+    {
+        $this->seed([CategorySeeder::class, WarehouseSeeder::class, WarehouseLocationSeeder::class]);
+        $central = Warehouse::where('name', 'Gudang Pusat')->firstOrFail();
+
+        $this->assertSame(['A1', 'A2', 'A3', 'A4', 'A5'], WarehouseLocation::where('warehouse_id', $central->id)->where('status', 'active')->where('zone', 'A')->orderBy('code')->pluck('code')->all());
+        $this->assertSame(35, WarehouseLocation::where('warehouse_id', $central->id)->where('status', 'active')->count());
+        $this->assertTrue(WarehouseLocation::where('warehouse_id', $central->id)->where('code', 'A5')->whereHas('categories', fn ($query) => $query->where('name', 'Sistem Pengereman'))->exists());
     }
 }

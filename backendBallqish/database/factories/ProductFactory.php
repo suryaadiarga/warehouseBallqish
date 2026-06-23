@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductFactory extends Factory
 {
@@ -16,17 +16,16 @@ class ProductFactory extends Factory
             'Gear Set', 'Shockbreaker', 'Spion', 'Handle Rem',
             'Kabel Gas', 'Kabel Kopling', 'Radiator Coolant',
             'Velg Racing', 'Klakson', 'Relay', 'Sekring',
-            'Bearing Roda', 'Injector', 'Throttle Body'
+            'Bearing Roda', 'Injector', 'Throttle Body',
         ];
 
         $prefix = ['MES', 'ELK', 'BAN', 'OLI', 'AKS', 'TLS'];
 
-        $name = $this->faker->randomElement($names) . ' ' . $this->faker->randomElement(['Honda', 'Yamaha', 'Suzuki']);
+        $name = $this->faker->randomElement($names).' '.$this->faker->randomElement(['Honda', 'Yamaha', 'Suzuki']);
 
         return [
             'category_id' => Category::inRandomOrder()->value('id') ?? 1,
             'sku' => $this->faker->unique()->bothify('???-#####'),
-            'barcode' => $this->faker->unique()->numerify('#############'),
             'name' => $name,
             'stock' => $this->faker->numberBetween(0, 100),
             'min_stock_level' => $this->faker->numberBetween(5, 20),

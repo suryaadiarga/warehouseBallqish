@@ -12,9 +12,10 @@ import { hasInventoryAdminAccess } from '@/lib/auth';
 import { ArrowLeftRight, PackageSearch, Warehouse } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type ProductOption = { id: number; name: string; sku: string };
+type ProductOption = { id: number; category_id: number; name: string; sku: string };
 type WarehouseOption = { id: number; name: string };
-type WarehouseLocationOption = { id: number; warehouse_id: number; code: string; name: string };
+type WarehouseLocationOption = { id: number; warehouse_id: number; code: string; name: string; quantity?: number; capacity?: number | null; total_quantity?: number | string | null; status?: string; categories?: Array<{ id: number; name: string }> };
+type ProductStockPosition = { id: number; warehouse_id: number; warehouse_location_id: number | null; quantity: number; warehouse?: WarehouseOption; warehouse_location?: WarehouseLocationOption | null };
 
 type TransferMutation = {
   id: number;
@@ -38,6 +39,8 @@ export function StockTransfersPage() {
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [locations, setLocations] = useState<WarehouseLocationOption[]>([]);
+  const [stockPositions, setStockPositions] = useState<ProductStockPosition[]>([]);
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +64,7 @@ export function StockTransfersPage() {
 
     try {
       const [productRes, warehouseRes, locationRes] = await Promise.all([
-        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 100 } }),
+        api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 1000 } }),
         api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
         api.get<ApiEnvelope<WarehouseLocationOption[]>>('/warehouse-locations'),
       ]);
@@ -80,14 +83,47 @@ export function StockTransfersPage() {
     void loadData();
   }, []);
 
+  const selectedProduct = products.find((product) => String(product.id) === form.product_id);
+
+  const compatibleDestinationLocations = (warehouseId: string, quantity = form.quantity, sourceLocationId = form.from_warehouse_location_id) => locations
+    .filter((location) => String(location.warehouse_id) === warehouseId)
+    .filter((location) => location.status === 'active' || !location.status)
+    .filter((location) => !selectedProduct || !location.categories?.length || location.categories.some((category) => category.id === selectedProduct.category_id))
+    .filter((location) => !location.capacity || Number(location.total_quantity ?? 0) + quantity <= location.capacity)
+    .filter((location) => String(location.id) !== sourceLocationId);
+
+  const selectProduct = async (productId: string) => {
+    setForm((current) => ({ ...current, product_id: productId, from_warehouse_id: '', from_warehouse_location_id: '', to_warehouse_location_id: '' }));
+    setStockPositions([]);
+    if (!productId) return;
+
+    setDetectingLocation(true);
+    try {
+      const response = await api.get<ApiEnvelope<{ stocks: ProductStockPosition[] }>>(`/products/${productId}/stocks`);
+      const available = response.data.data.stocks.filter((stock) => stock.quantity > 0 && stock.warehouse_location_id);
+      setStockPositions(available);
+      const source = available[0];
+      if (source) {
+        setForm((current) => ({ ...current, product_id: productId, from_warehouse_id: String(source.warehouse_id), from_warehouse_location_id: String(source.warehouse_location_id) }));
+      } else {
+        showToast({ type: 'error', title: 'Stok tidak ditemukan', description: 'Produk ini belum mempunyai stok pada rak mana pun.' });
+      }
+    } catch (err) {
+      showToast({ type: 'error', title: 'Posisi stok gagal dideteksi', description: extractApiErrorMessage(err) });
+    } finally {
+      setDetectingLocation(false);
+    }
+  };
+
   const fromLocations = useMemo(
-    () => locations.filter((location) => String(location.warehouse_id) === form.from_warehouse_id),
-    [form.from_warehouse_id, locations]
+    () => stockPositions.filter((stock) => String(stock.warehouse_id) === form.from_warehouse_id && stock.warehouse_location).map((stock) => ({ ...stock.warehouse_location!, quantity: stock.quantity })),
+    [form.from_warehouse_id, stockPositions]
   );
 
   const toLocations = useMemo(
-    () => locations.filter((location) => String(location.warehouse_id) === form.to_warehouse_id),
-    [form.to_warehouse_id, locations]
+    () => compatibleDestinationLocations(form.to_warehouse_id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form.to_warehouse_id, form.from_warehouse_location_id, form.quantity, locations, selectedProduct?.category_id]
   );
 
   const validateBeforeConfirm = () => {
@@ -198,7 +234,7 @@ export function StockTransfersPage() {
         >
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Produk</label>
-            <select value={form.product_id} onChange={(event) => setForm((current) => ({ ...current, product_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+            <select value={form.product_id} onChange={(event) => void selectProduct(event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
               <option value="">Pilih produk</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
@@ -209,7 +245,7 @@ export function StockTransfersPage() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Gudang Asal</label>
-            <select value={form.from_warehouse_id} onChange={(event) => setForm((current) => ({ ...current, from_warehouse_id: event.target.value, from_warehouse_location_id: '' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+            <select value={form.from_warehouse_id} onChange={(event) => { const source = stockPositions.find((stock) => String(stock.warehouse_id) === event.target.value); setForm((current) => ({ ...current, from_warehouse_id: event.target.value, from_warehouse_location_id: source?.warehouse_location_id ? String(source.warehouse_location_id) : '' })); }} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required disabled={detectingLocation}>
               <option value="">Pilih gudang asal</option>
               {warehouses.map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
@@ -224,14 +260,14 @@ export function StockTransfersPage() {
               <option value="">Pilih rak otomatis</option>
               {fromLocations.map((location) => (
                 <option key={location.id} value={location.id}>
-                  {location.code} - {location.name}
+                  {location.code} - {location.name} (stok {location.quantity ?? '-'})
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Gudang Tujuan</label>
-            <select value={form.to_warehouse_id} onChange={(event) => setForm((current) => ({ ...current, to_warehouse_id: event.target.value, to_warehouse_location_id: '' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+            <select value={form.to_warehouse_id} onChange={(event) => { const candidates = compatibleDestinationLocations(event.target.value); setForm((current) => ({ ...current, to_warehouse_id: event.target.value, to_warehouse_location_id: candidates[0] ? String(candidates[0].id) : '' })); }} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
               <option value="">Pilih gudang tujuan</option>
               {warehouses.map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
@@ -243,7 +279,7 @@ export function StockTransfersPage() {
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Tujuan</label>
             <select value={form.to_warehouse_location_id} onChange={(event) => setForm((current) => ({ ...current, to_warehouse_location_id: event.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="">Pilih rak otomatis</option>
+              <option value="">Tidak ada rak sesuai kategori/kapasitas</option>
               {toLocations.map((location) => (
                 <option key={location.id} value={location.id}>
                   {location.code} - {location.name}
@@ -253,7 +289,7 @@ export function StockTransfersPage() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700">Quantity</label>
-            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((current) => ({ ...current, quantity: Number(event.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
+            <input type="number" min={1} value={form.quantity} onChange={(event) => { const quantity = Number(event.target.value); const source = stockPositions.find((stock) => stock.quantity >= quantity) ?? stockPositions[0]; const sourceLocationId = source?.warehouse_location_id ? String(source.warehouse_location_id) : form.from_warehouse_location_id; const destinations = compatibleDestinationLocations(form.to_warehouse_id, quantity, sourceLocationId); setForm((current) => ({ ...current, quantity, from_warehouse_id: source ? String(source.warehouse_id) : current.from_warehouse_id, from_warehouse_location_id: sourceLocationId, to_warehouse_location_id: destinations[0] ? String(destinations[0].id) : '' })); }} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
           </div>
           <div className="md:col-span-2 xl:col-span-3">
             <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
