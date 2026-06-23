@@ -145,7 +145,7 @@ export function ProductManagement() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat master produk" description="Mengambil daftar produk dan kategori dari backend." />;
+    return <LoadingState title="Memuat produk" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -157,7 +157,6 @@ export function ProductManagement() {
       <PageHeader
         eyebrow="Data Master"
         title="Produk"
-        description="Kelola data master produk, ringkasan stok, kategori, dan parameter stok minimum yang dipakai backend WMS."
         action={
           <button
             type="button"
@@ -221,7 +220,6 @@ export function ProductManagement() {
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 className="text-lg font-black text-slate-900">Daftar Produk</h3>
-            <p className="mt-1 text-sm text-slate-500">Sinkron langsung dengan endpoint `/api/products`.</p>
           </div>
           <form
             onSubmit={(event) => {

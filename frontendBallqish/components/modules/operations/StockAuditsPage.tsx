@@ -84,7 +84,7 @@ export function StockAuditsPage() {
   if (error) return <ErrorState title="Audit Stok gagal dimuat" description={error} />;
 
   return <div className="space-y-6">
-    <PageHeader eyebrow="Penghitungan Berkala" title="Audit Stok per Rak" description="Penghitungan fisik menggunakan metode hitung buta. Selisih yang disetujui otomatis menjadi mutasi rekonsiliasi pada rak terkait." />
+    <PageHeader eyebrow="Penghitungan Berkala" title="Audit Stok per Rak" />
     <section className="surface-card rounded-[28px] p-6">
       <form onSubmit={createAudit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <label><span className="mb-2 block text-sm font-bold">Gudang</span><select required className="input" value={form.warehouse_id} onChange={(e) => setForm({ ...form, warehouse_id: e.target.value, warehouse_location_id: '' })}><option value="">Pilih gudang</option>{warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>

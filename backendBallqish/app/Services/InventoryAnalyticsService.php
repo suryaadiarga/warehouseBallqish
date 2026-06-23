@@ -10,6 +10,10 @@ use Illuminate\Support\Collection;
 
 class InventoryAnalyticsService
 {
+    private const SLOW_MOVING_MIN_DAYS = 10;
+
+    private const DEAD_STOCK_MIN_DAYS = 31;
+
     private const EWMA_ALPHA = 0.30;
 
     private const CROSTON_ALPHA = 0.20;
@@ -40,7 +44,7 @@ class InventoryAnalyticsService
     public function buildMovementAnalysis(?int $warehouseId = null, int $lookbackDays = 90): Collection
     {
         $productsQuery = Product::query()
-            ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock'])
+            ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'created_at'])
             ->with('category:id,name');
 
         if ($warehouseId) {
@@ -84,10 +88,13 @@ class InventoryAnalyticsService
                 'safe_products' => $analysis->where('status', 'safe')->count(),
                 'warning_products' => $analysis->where('status', 'warning')->count(),
                 'critical_products' => $analysis->where('status', 'critical')->count(),
+                'slow_moving_products' => $analysis->where('movement_status', 'slow_moving')->count(),
+                'dead_stock_products' => $analysis->where('movement_status', 'dead_stock')->count(),
             ],
             'critical_products' => $analysis->where('status', 'critical')->sortByDesc('critical_score')->take(10)->values()->all(),
             'fast_moving_products' => $analysis->filter(fn (array $item) => $item['forecast_daily_usage'] > 0)->sortByDesc('forecast_daily_usage')->take(10)->values()->all(),
-            'slow_moving_products' => $analysis->filter(fn (array $item) => $item['forecast_daily_usage'] > 0)->sortBy('forecast_daily_usage')->take(10)->values()->all(),
+            'slow_moving_products' => $analysis->where('movement_status', 'slow_moving')->sortByDesc('days_since_last_outbound')->take(10)->values()->all(),
+            'dead_stock_products' => $analysis->where('movement_status', 'dead_stock')->sortByDesc('days_since_last_outbound')->take(10)->values()->all(),
         ];
     }
 
@@ -111,6 +118,8 @@ class InventoryAnalyticsService
 
         $avgDailyUsage = (int) round($historicalAverage);
         $forecastDailyUsage = $rawForecast > 0 ? max(1, (int) round($rawForecast)) : 0;
+        $daysSinceLastOutbound = $this->daysSinceLastOutbound($dailySeries, $product);
+        $movementStatus = $this->movementStatus($currentStock, $daysSinceLastOutbound);
         $estimatedDaysUntilStockout = $rawForecast > 0 ? (int) ceil($currentStock / $rawForecast) : null;
         $estimatedStockoutDate = $estimatedDaysUntilStockout !== null
             ? now()->addDays($estimatedDaysUntilStockout)->toDateString()
@@ -140,7 +149,10 @@ class InventoryAnalyticsService
             'confidence_score' => $confidence,
             'critical_score' => $criticalScore,
             'demand_spike' => $demandSpike,
-            'is_dead_stock' => $nonZeroDays === 0,
+            'days_since_last_outbound' => $daysSinceLastOutbound,
+            'movement_status' => $movementStatus,
+            'is_slow_moving' => $movementStatus === 'slow_moving',
+            'is_dead_stock' => $movementStatus === 'dead_stock',
             'total_outbound_last_30_days' => array_sum(array_slice($dailySeries, -30)),
             'total_outbound_lookback' => $totalOutbound,
             'movement_count_last_30_days' => $recentMovementCount,
@@ -148,7 +160,7 @@ class InventoryAnalyticsService
             'estimated_days_until_stockout' => $estimatedDaysUntilStockout,
             'estimated_stockout_date' => $estimatedStockoutDate,
             'status' => $status,
-            'risk_reasons' => $this->riskReasons($currentStock, (int) $product->min_stock_level, $estimatedDaysUntilStockout, $leadTimeDemand, $safetyStock, $demandSpike, $nonZeroDays),
+            'risk_reasons' => $this->riskReasons($currentStock, (int) $product->min_stock_level, $estimatedDaysUntilStockout, $leadTimeDemand, $safetyStock, $demandSpike, $movementStatus, $daysSinceLastOutbound),
             'recommendation' => $recommendedRestockQty,
             'recommended_restock_qty' => $recommendedRestockQty,
         ];
@@ -285,7 +297,38 @@ class InventoryAnalyticsService
         return max(0, $target - $stock);
     }
 
-    private function riskReasons(int $stock, int $minimum, ?int $days, int $leadTimeDemand, int $safetyStock, bool $spike, int $nonZeroDays): array
+    private function daysSinceLastOutbound(array $series, Product $product): int
+    {
+        for ($index = count($series) - 1; $index >= 0; $index--) {
+            if ($series[$index] > 0) {
+                return count($series) - 1 - $index;
+            }
+        }
+
+        return min(
+            count($series),
+            max(0, (int) CarbonImmutable::today()->diffInDays(CarbonImmutable::parse($product->created_at), true))
+        );
+    }
+
+    private function movementStatus(int $stock, int $daysSinceLastOutbound): string
+    {
+        if ($stock <= 0) {
+            return 'stock_out';
+        }
+
+        if ($daysSinceLastOutbound >= self::DEAD_STOCK_MIN_DAYS) {
+            return 'dead_stock';
+        }
+
+        if ($daysSinceLastOutbound >= self::SLOW_MOVING_MIN_DAYS) {
+            return 'slow_moving';
+        }
+
+        return 'active';
+    }
+
+    private function riskReasons(int $stock, int $minimum, ?int $days, int $leadTimeDemand, int $safetyStock, bool $spike, string $movementStatus, int $daysSinceLastOutbound): array
     {
         $reasons = [];
         if ($stock <= $minimum) {
@@ -300,8 +343,12 @@ class InventoryAnalyticsService
         if ($spike) {
             $reasons[] = 'Terdeteksi lonjakan permintaan dalam 7 hari terakhir.';
         }
-        if ($nonZeroDays === 0) {
-            $reasons[] = 'Tidak ada barang keluar selama periode analisis.';
+        if ($movementStatus === 'dead_stock') {
+            $reasons[] = "Tidak ada barang keluar selama {$daysSinceLastOutbound} hari sehingga dikategorikan dead stock.";
+        } elseif ($movementStatus === 'slow_moving') {
+            $reasons[] = "Tidak ada barang keluar selama {$daysSinceLastOutbound} hari sehingga dikategorikan slow-moving.";
+        } elseif ($movementStatus === 'stock_out') {
+            $reasons[] = 'Stok produk sudah habis.';
         }
         if ($reasons === []) {
             $reasons[] = 'Stok dan pola permintaan masih dalam batas aman.';

@@ -15,10 +15,6 @@ export function InventoryMovementBadge({
     return <StatusBadge label="penyesuaian" tone="critical" />;
   }
 
-  if (source === 'opname') {
-    return <StatusBadge label="opname" tone="safe" />;
-  }
-
   if (source === 'stock_audit') {
     return <StatusBadge label="audit stok" tone="safe" />;
   }

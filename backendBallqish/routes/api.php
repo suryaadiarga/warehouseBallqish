@@ -69,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/stock-transfers', [StockTransferController::class, 'store']);
     Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
 
-    // Audit Stok per rak menggantikan Stock Opname
+    // Audit Stok per rak
     Route::get('/stock-audits', [StockAuditController::class, 'index']);
     Route::post('/stock-audits', [StockAuditController::class, 'store']);
     Route::put('/stock-audits/{id}/counts', [StockAuditController::class, 'count']);

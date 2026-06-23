@@ -49,8 +49,4 @@ class Warehouse extends Model
         return $this->hasMany(StockMutation::class, 'to_warehouse_id');
     }
 
-    public function stockOpnames()
-    {
-        return $this->hasMany(StockOpname::class);
-    }
 }

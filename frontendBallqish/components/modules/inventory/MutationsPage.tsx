@@ -174,7 +174,7 @@ export function MutationsPage() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat mutasi stok" description="Mengambil draf, mutasi yang disetujui, produk, gudang, dan lokasi." />;
+    return <LoadingState title="Memuat mutasi stok" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -186,7 +186,6 @@ export function MutationsPage() {
       <PageHeader
         eyebrow="Alur Inventaris"
         title="Mutasi Stok"
-        description="Buat draf mutasi barang masuk/keluar, lalu setujui atau tolak langsung dari ruang kerja inventaris."
         action={
           <button
             type="button"
@@ -262,7 +261,6 @@ export function MutationsPage() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Daftar Mutasi</h3>
-          <p className="mt-1 text-sm text-slate-500">Daftar memakai endpoint laporan mutasi karena backend belum menyediakan endpoint GET khusus mutasi. Konsekuensinya, detail gudang dan lokasi tidak selalu dikirim pada data daftar.</p>
         </div>
 
         {mutations.length === 0 ? (
@@ -289,7 +287,11 @@ export function MutationsPage() {
                     <td className="px-6 py-4">
                       <p className="font-semibold text-slate-900">{mutation.product?.name ?? `Produk #${mutation.product_id}`}</p>
                       <p className="mt-1 text-xs text-slate-500">{mutation.reference_number || 'Tanpa reference'}</p>
-                      <p className="mt-1 text-xs text-slate-400">{mutation.note || mutation.reason || 'Tanpa catatan tambahan'}</p>
+                      {mutation.note && !mutation.note.startsWith('Synthetic profile:') ? (
+                        <p className="mt-1 text-xs text-slate-400">{mutation.note}</p>
+                      ) : mutation.reason ? (
+                        <p className="mt-1 text-xs text-slate-400">{mutation.reason}</p>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -342,8 +344,8 @@ export function MutationsPage() {
         title={dialog?.mode === 'approve' ? 'Setujui mutasi ini?' : 'Tolak draf mutasi ini?'}
         description={
           dialog?.mode === 'approve'
-            ? 'Persetujuan akan memperbarui stok di backend sesuai gudang dan lokasi yang dipilih.'
-            : 'Penolakan akan menghapus draf mutasi dari sistem backend.'
+            ? 'Stok akan diperbarui sesuai gudang dan lokasi yang dipilih.'
+            : 'Draf mutasi akan dihapus.'
         }
         confirmLabel={dialog?.mode === 'approve' ? 'Setujui Sekarang' : 'Tolak Draf'}
         tone={dialog?.mode === 'approve' ? 'primary' : 'danger'}

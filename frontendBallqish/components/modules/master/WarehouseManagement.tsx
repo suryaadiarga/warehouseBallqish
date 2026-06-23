@@ -82,7 +82,7 @@ export function WarehouseManagement() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat gudang" description="Mengambil daftar gudang aktif dari backend." />;
+    return <LoadingState title="Memuat gudang" description="Mohon tunggu sebentar." />;
   }
 
   if (error) {
@@ -94,7 +94,6 @@ export function WarehouseManagement() {
       <PageHeader
         eyebrow="Data Master Gudang"
         title="Manajemen Gudang"
-        description="Kelola lokasi operasional dan pantau jumlah rak serta persediaan pada setiap gudang."
         action={
           <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700">
             <Plus size={18} />
@@ -134,7 +133,6 @@ export function WarehouseManagement() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Daftar Gudang</h3>
-          <p className="mt-1 text-sm text-slate-500">Ringkasan gudang, rak, dan stok langsung dari data operasional.</p>
         </div>
 
         {warehouses.length === 0 ? (

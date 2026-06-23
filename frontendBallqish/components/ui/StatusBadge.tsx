@@ -26,6 +26,10 @@ const statusLabels: Record<string, string> = {
   pending: 'Menunggu',
   increase: 'Penambahan',
   decrease: 'Pengurangan',
+  active_movement: 'Aktif',
+  slow_moving: 'Slow-moving',
+  dead_stock: 'Dead stock',
+  stock_out: 'Stock Habis',
   unknown: 'Tidak Diketahui',
 };
 

@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-5 text-slate-500">
         <span className="font-bold text-slate-400">Ballqish WMS</span>
-        <span className="block">Operasional gudang terintegrasi</span>
+        <span className="block">Manajemen stok dan gudang</span>
       </div>
     </>
   );
