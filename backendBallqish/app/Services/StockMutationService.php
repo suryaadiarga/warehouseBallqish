@@ -36,7 +36,7 @@ class StockMutationService
 
         $this->applyApprovedMutation($mutation, $userId);
 
-        return $mutation->fresh(['product:id,name,sku', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
+        return $mutation->fresh(['product:id,name,sku,image_key', 'warehouse:id,name', 'warehouseLocation:id,warehouse_id,code,name']);
     }
 
     public function createDraft(array $data, int $userId)
@@ -287,7 +287,7 @@ class StockMutationService
     private function transferRelations(): array
     {
         return [
-            'product:id,name,sku',
+            'product:id,name,sku,image_key',
             'fromWarehouse:id,name',
             'toWarehouse:id,name',
             'fromLocation:id,warehouse_id,code,name',

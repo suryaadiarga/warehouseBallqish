@@ -3,6 +3,7 @@
 import { InventoryMovementBadge } from '@/components/ui/InventoryMovementBadge';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
 import { formatDateTimeId } from '@/lib/format';
@@ -31,6 +32,7 @@ type StockCardResponse = {
     sku: string;
     stock: number;
     min_stock_level: number;
+    image_url?: string;
   };
   stock_card: StockCardEntry[];
 };
@@ -76,6 +78,15 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
         eyebrow="Jejak Audit"
         title={`Kartu Stok: ${data.product.name}`}
       />
+
+      <section className="surface-card flex items-center gap-4 rounded-[28px] p-5">
+        <ProductImage src={data.product.image_url} alt={data.product.name} showIllustrationLabel className="h-24 w-24 shrink-0 rounded-2xl border border-slate-200" />
+        <div>
+          <p className="font-mono text-xs text-slate-500">{data.product.sku}</p>
+          <p className="mt-1 font-black text-slate-900">{data.product.name}</p>
+          <p className="mt-2 text-xs text-slate-500">Gambar ilustrasi berdasarkan jenis produk.</p>
+        </div>
+      </section>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <MetricCard label="Stok Saat Ini" value={data.product.stock} icon={PackageSearch} />

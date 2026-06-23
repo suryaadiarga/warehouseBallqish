@@ -11,6 +11,8 @@ class Product {
     this.barcode,
     this.price,
     this.category,
+    this.imageUrl,
+    this.imageIsIllustration = true,
   });
 
   final int id;
@@ -22,6 +24,8 @@ class Product {
   final String? barcode;
   final num? price;
   final Category? category;
+  final String? imageUrl;
+  final bool imageIsIllustration;
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
     id: json['id'] as int,
@@ -32,6 +36,8 @@ class Product {
     minStockLevel: json['min_stock_level'] as int? ?? 0,
     barcode: json['barcode']?.toString(),
     price: num.tryParse(json['price']?.toString() ?? ''),
+    imageUrl: json['image_url']?.toString(),
+    imageIsIllustration: json['image_is_illustration'] as bool? ?? true,
     category: json['category'] is Map<String, dynamic>
         ? Category.fromJson(json['category'] as Map<String, dynamic>)
         : null,

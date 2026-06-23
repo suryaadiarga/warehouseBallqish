@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/query_views.dart';
+import '../../../core/widgets/product_image.dart';
 import '../../products/data/product_model.dart';
 import '../../shared/crud_services.dart';
 import '../../warehouse_locations/data/warehouse_location_model.dart';
@@ -225,7 +226,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         final location = row['warehouse_location'] as Map?;
                         return Card(
                           child: ListTile(
-                            leading: const Icon(Icons.inventory_2_outlined),
+                            leading: ProductImage(
+                              imageUrl: product?['image_url']?.toString(),
+                              size: 52,
+                            ),
                             title: Text(
                               product?['name']?.toString() ?? 'Produk',
                             ),
@@ -245,10 +249,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       final type = row['type']?.toString() ?? '-';
                       return Card(
                         child: ListTile(
-                          leading: Icon(
-                            type == 'in'
-                                ? Icons.add_circle_outline
-                                : Icons.remove_circle_outline,
+                          leading: ProductImage(
+                            imageUrl: product?['image_url']?.toString(),
+                            size: 52,
                           ),
                           title: Text(
                             product?['name']?.toString() ??

@@ -3,6 +3,7 @@
 import { useToast } from '@/components/providers/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
 import { ChevronLeft, ChevronRight, Plus, Search, Trash2 } from 'lucide-react';
@@ -32,6 +33,8 @@ type Product = {
   price?: number;
   category?: Category;
   supplier?: Supplier;
+  image_url?: string;
+  image_is_illustration?: boolean;
 };
 
 type ProductPagination = {
@@ -284,8 +287,13 @@ export function ProductManagement() {
                   {products.map((product) => (
                     <tr key={product.id} className="hover:bg-slate-50/80">
                       <td className="px-6 py-4">
-                        <p className="font-bold text-slate-900">{product.name}</p>
-                        <p className="mt-1 font-mono text-xs text-slate-500">{product.sku}</p>
+                        <div className="flex min-w-[280px] items-center gap-3">
+                          <ProductImage src={product.image_url} alt={product.name} showIllustrationLabel className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200" />
+                          <div>
+                            <p className="font-bold text-slate-900">{product.name}</p>
+                            <p className="mt-1 font-mono text-xs text-slate-500">{product.sku}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-slate-600">{product.category?.name ?? '-'}</td>
                       <td className="px-6 py-4 text-slate-600">{product.supplier?.name ?? '-'}</td>

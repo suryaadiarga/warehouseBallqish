@@ -4,6 +4,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/query_views.dart';
+import '../../../core/widgets/product_image.dart';
 import '../../shared/crud_services.dart';
 import '../data/product_model.dart';
 
@@ -201,17 +202,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     itemCount: products.length,
                     itemBuilder: (context, index) {
                       final product = products[index];
-                      final low = product.stock <= product.minStockLevel;
                       return Card(
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: low
-                                ? Colors.red.shade50
-                                : Colors.teal.shade50,
-                            child: Icon(
-                              Icons.inventory_2_outlined,
-                              color: low ? Colors.red : Colors.teal,
-                            ),
+                          leading: ProductImage(
+                            imageUrl: product.imageUrl,
+                            showIllustrationLabel: product.imageIsIllustration,
                           ),
                           title: Text(product.name),
                           subtitle: Text(
