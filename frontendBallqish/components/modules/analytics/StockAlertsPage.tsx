@@ -19,6 +19,14 @@ type StockAlertItem = {
   current_stock: number;
   min_stock_level: number;
   avg_daily_usage: number;
+  forecast_daily_usage: number;
+  forecast_method: 'ewma' | 'croston_sba';
+  confidence_score: number;
+  critical_score: number;
+  demand_spike: boolean;
+  lead_time_days: number;
+  safety_stock: number;
+  risk_reasons: string[];
   total_outbound_last_30_days: number;
   movement_count_last_30_days: number;
   estimated_days_until_stockout?: number | null;
@@ -81,7 +89,7 @@ export function StockAlertsPage() {
       <PageHeader
         eyebrow="Smart Inventory"
         title="Stock Alerts"
-        description="Analitik rule-based untuk mendeteksi stok warning dan critical berdasarkan stok saat ini, minimum stock, dan rata-rata pengeluaran."
+        description="Deteksi hybrid menggunakan EWMA untuk demand stabil, Croston/SBA untuk demand intermittent, serta critical score berbasis lead time dan safety stock."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -122,7 +130,7 @@ export function StockAlertsPage() {
                 <tr>
                   <th className="px-6 py-4">Produk</th>
                   <th className="px-6 py-4">Current / Min</th>
-                  <th className="px-6 py-4">Avg Usage</th>
+                  <th className="px-6 py-4">AI Forecast</th>
                   <th className="px-6 py-4">Prediksi Habis</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Restock</th>
@@ -135,14 +143,15 @@ export function StockAlertsPage() {
                       <p className="font-semibold text-slate-900">{alert.name}</p>
                       <p className="mt-1 text-xs text-slate-500">{alert.sku}</p>
                       <p className="mt-1 text-xs text-slate-400">{alert.category ?? 'Tanpa kategori'}</p>
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-sky-600">{alert.forecast_method === 'croston_sba' ? 'Croston/SBA' : 'EWMA'}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-lg font-black text-slate-900">{alert.current_stock}</p>
                       <p className="mt-1 text-xs text-slate-500">Minimum {alert.min_stock_level}</p>
                     </td>
                     <td className="px-6 py-4 text-slate-700">
-                      <p className="font-bold">{alert.avg_daily_usage}/hari</p>
-                      <p className="mt-1 text-xs text-slate-500">{alert.total_outbound_last_30_days} qty dari {alert.movement_count_last_30_days} movement</p>
+                      <p className="font-bold">Prediksi {alert.forecast_daily_usage}/hari</p>
+                      <p className="mt-1 text-xs text-slate-500">Historis {alert.avg_daily_usage}/hari · {alert.total_outbound_last_30_days} qty</p>
                     </td>
                     <td className="px-6 py-4 text-slate-700">
                       <p className="font-bold">{alert.estimated_days_until_stockout ?? '-'}</p>
@@ -150,10 +159,14 @@ export function StockAlertsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge label={alert.status} tone={alert.status === 'critical' ? 'critical' : alert.status === 'warning' ? 'warning' : 'safe'} />
+                      <p className="mt-2 text-xs font-bold text-slate-700">Risk {alert.critical_score}/100</p>
+                      <p className="mt-1 text-xs text-slate-500">Confidence {alert.confidence_score}%</p>
+                      {alert.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Demand spike</p> : null}
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-black text-emerald-700">{alert.recommended_restock_qty}</p>
-                      <p className="mt-1 text-xs text-slate-500">Recommendation: {alert.recommendation}</p>
+                      <p className="mt-1 text-xs text-slate-500">Lead time {alert.lead_time_days} hari</p>
+                      <p className="mt-2 max-w-xs text-xs leading-5 text-slate-600">{alert.risk_reasons[0]}</p>
                     </td>
                   </tr>
                 ))}

@@ -12,7 +12,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level', 'price'])
+            ->select(['id', 'category_id', 'sku', 'name', 'stock', 'min_stock_level', 'lead_time_days', 'safety_stock', 'price'])
             ->with(['category:id,name']);
 
         if ($request->filled('category_id')) {

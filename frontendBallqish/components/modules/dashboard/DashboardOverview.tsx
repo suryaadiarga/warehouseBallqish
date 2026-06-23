@@ -34,6 +34,12 @@ type InsightItem = {
   current_stock: number;
   min_stock_level: number;
   avg_daily_usage: number;
+  forecast_daily_usage: number;
+  forecast_method: 'ewma' | 'croston_sba';
+  confidence_score: number;
+  critical_score: number;
+  demand_spike: boolean;
+  risk_reasons: string[];
   estimated_days_until_stockout: number | null;
   estimated_stockout_date: string | null;
   status: 'safe' | 'warning' | 'critical';
@@ -131,7 +137,7 @@ function InsightTable({
               <tr>
                 <th className="px-6 py-4">Produk</th>
                 <th className="px-6 py-4">Stok</th>
-                <th className="px-6 py-4">Avg Usage</th>
+                <th className="px-6 py-4">AI Forecast</th>
                 <th className="px-6 py-4">Prediksi Habis</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Restock</th>
@@ -147,7 +153,7 @@ function InsightTable({
                   <td className="px-6 py-4 font-semibold text-slate-700">
                     {item.current_stock} / min {item.min_stock_level}
                   </td>
-                  <td className="px-6 py-4">{item.avg_daily_usage}/hari</td>
+                  <td className="px-6 py-4"><span className="font-bold">{item.forecast_daily_usage}/hari</span><span className="mt-1 block text-xs text-slate-500">Avg {item.avg_daily_usage} · {item.forecast_method === 'croston_sba' ? 'Croston/SBA' : 'EWMA'}</span></td>
                   <td className="px-6 py-4">
                     <p className="font-semibold text-slate-800">
                       {item.estimated_days_until_stockout ?? '-'} hari
@@ -156,6 +162,8 @@ function InsightTable({
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge label={item.status} tone={item.status} />
+                    <p className="mt-2 text-xs font-bold text-slate-700">Risk {item.critical_score} · Confidence {item.confidence_score}%</p>
+                    {item.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Demand spike</p> : null}
                   </td>
                   <td className="px-6 py-4 font-black text-slate-900">{item.recommended_restock_qty}</td>
                 </tr>
