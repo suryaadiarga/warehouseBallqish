@@ -22,6 +22,7 @@ class StoreStockTransferRequest extends FormRequest
             'from_warehouse_location_id' => ['nullable', 'exists:warehouse_locations,id'],
             'to_warehouse_location_id' => ['nullable', 'exists:warehouse_locations,id'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'estimated_arrival_at' => ['nullable', 'date', 'after_or_equal:now'],
             'note' => ['nullable', 'string'],
         ];
     }
@@ -34,11 +35,11 @@ class StoreStockTransferRequest extends FormRequest
             $fromLocationId = $this->input('from_warehouse_location_id');
             $toLocationId = $this->input('to_warehouse_location_id');
 
-            if ($fromLocationId && !WarehouseLocation::whereKey($fromLocationId)->where('warehouse_id', $fromWarehouseId)->exists()) {
+            if ($fromLocationId && ! WarehouseLocation::whereKey($fromLocationId)->where('warehouse_id', $fromWarehouseId)->exists()) {
                 $validator->errors()->add('from_warehouse_location_id', 'Lokasi asal tidak sesuai dengan gudang asal.');
             }
 
-            if ($toLocationId && !WarehouseLocation::whereKey($toLocationId)->where('warehouse_id', $toWarehouseId)->exists()) {
+            if ($toLocationId && ! WarehouseLocation::whereKey($toLocationId)->where('warehouse_id', $toWarehouseId)->exists()) {
                 $validator->errors()->add('to_warehouse_location_id', 'Lokasi tujuan tidak sesuai dengan gudang tujuan.');
             }
         });

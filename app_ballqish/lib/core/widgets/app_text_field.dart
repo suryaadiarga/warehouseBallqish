@@ -10,6 +10,8 @@ class AppTextField extends StatelessWidget {
     this.keyboardType,
     this.obscureText = false,
     this.maxLines = 1,
+    this.hintText,
+    this.labelAsHint = false,
   });
 
   final TextEditingController controller;
@@ -19,6 +21,8 @@ class AppTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscureText;
   final int maxLines;
+  final String? hintText;
+  final bool labelAsHint;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +33,8 @@ class AppTextField extends StatelessWidget {
       obscureText: obscureText,
       maxLines: maxLines,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: labelAsHint ? null : label,
+        hintText: hintText ?? (labelAsHint ? label : null),
         prefixIcon: icon == null ? null : Icon(icon),
       ),
     );

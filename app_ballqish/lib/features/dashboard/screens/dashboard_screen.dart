@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/query_views.dart';
 import '../data/dashboard_service.dart';
 import '../widgets/summary_card.dart';
@@ -51,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Total Produk',
                 value: '${data['total_products'] ?? 0}',
                 icon: Icons.inventory_2,
-                color: Colors.teal,
+                color: AppColors.sky600,
               ),
               SummaryCard(
                 title: 'Stok Masuk Hari Ini',
