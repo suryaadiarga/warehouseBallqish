@@ -79,7 +79,7 @@ export function ProductStockDetailPage({ productId }: { productId: string }) {
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Total Stock" value={totalStock} icon={Boxes} description="Ringkasan total stock dari backend produk." />
+        <MetricCard label="Total Stok" value={totalStock} icon={Boxes} description="Ringkasan total stok dari backend produk." />
         <MetricCard label="Gudang Aktif" value={activeWarehouses} icon={Warehouse} tone="sky" description="Jumlah gudang yang menyimpan produk ini." />
         <MetricCard label="Lokasi Aktif" value={activeLocations} icon={MapPin} tone="emerald" description="Jumlah baris lokasi dengan quantity aktif." />
       </div>
@@ -88,7 +88,7 @@ export function ProductStockDetailPage({ productId }: { productId: string }) {
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="text-lg font-black text-slate-900">Distribusi Stok</h3>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-            <span>Min stock level: {data.product.min_stock_level}</span>
+            <span>Batas minimum stok: {data.product.min_stock_level}</span>
             {totalStock <= data.product.min_stock_level ? <StatusBadge label="low stock" tone="warning" /> : <StatusBadge label="safe stock" tone="safe" />}
           </div>
         </div>
@@ -104,8 +104,8 @@ export function ProductStockDetailPage({ productId }: { productId: string }) {
                 <tr>
                   <th className="px-6 py-4">Gudang</th>
                   <th className="px-6 py-4">Lokasi</th>
-                  <th className="px-6 py-4">Quantity</th>
-                  <th className="px-6 py-4">Reserved</th>
+                  <th className="px-6 py-4">Jumlah</th>
+                  <th className="px-6 py-4">Dipesan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

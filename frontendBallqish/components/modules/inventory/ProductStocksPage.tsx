@@ -92,25 +92,25 @@ export function ProductStocksPage() {
   const lowStockCount = stocks.filter((item) => item.quantity <= item.product.min_stock_level).length;
 
   if (loading) {
-    return <LoadingState title="Memuat product stocks" description="Mengambil stok detail per gudang dan lokasi dari backend." />;
+    return <LoadingState title="Memuat stok produk" description="Mengambil stok detail per gudang dan lokasi dari backend." />;
   }
 
   if (error) {
-    return <ErrorState title="Product stocks gagal dimuat" description={error} />;
+    return <ErrorState title="Stok produk gagal dimuat" description={error} />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inventory Detail"
-        title="Product Stocks"
+        eyebrow="Detail Inventaris"
+        title="Stok Produk"
         description="Stok detail utama backend WMS ditampilkan per produk, gudang, dan lokasi penyimpanan."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Stock Rows" value={pagination?.total ?? stocks.length} icon={Boxes} description="Jumlah baris stok detail yang sedang dimuat." />
-        <MetricCard label="Low Stock Rows" value={lowStockCount} icon={PackageSearch} tone="amber" description="Baris stok dengan quantity di bawah batas minimum produk." />
-        <MetricCard label="Warehouses" value={new Set(stocks.map((item) => item.warehouse?.id).filter(Boolean)).size} icon={Warehouse} tone="sky" description="Gudang aktif pada hasil filter saat ini." />
+        <MetricCard label="Baris Stok" value={pagination?.total ?? stocks.length} icon={Boxes} description="Jumlah baris stok detail yang sedang dimuat." />
+        <MetricCard label="Baris Stok Rendah" value={lowStockCount} icon={PackageSearch} tone="amber" description="Baris stok dengan jumlah di bawah batas minimum produk." />
+        <MetricCard label="Gudang" value={new Set(stocks.map((item) => item.warehouse?.id).filter(Boolean)).size} icon={Warehouse} tone="sky" description="Gudang aktif pada hasil filter saat ini." />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
@@ -170,9 +170,9 @@ export function ProductStocksPage() {
                     <th className="px-6 py-4">Produk</th>
                     <th className="px-6 py-4">Gudang</th>
                     <th className="px-6 py-4">Lokasi</th>
-                    <th className="px-6 py-4">Quantity</th>
-                    <th className="px-6 py-4">Reserved</th>
-                    <th className="px-6 py-4">Min Stock</th>
+                    <th className="px-6 py-4">Jumlah</th>
+                    <th className="px-6 py-4">Dipesan</th>
+                    <th className="px-6 py-4">Stok Minimum</th>
                     <th className="px-6 py-4">Aksi</th>
                   </tr>
                 </thead>

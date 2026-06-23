@@ -20,7 +20,7 @@ function LoginContent() {
     const reason = searchParams.get('reason');
 
     if (reason === 'password-updated') {
-      return 'Password berhasil diubah. Silakan login kembali dengan password baru Anda.';
+      return 'Kata sandi berhasil diubah. Silakan masuk kembali dengan kata sandi baru Anda.';
     }
 
     return '';
@@ -67,43 +67,43 @@ function LoginContent() {
               <Warehouse size={30} />
             </div>
             <span className="text-2xl font-black uppercase tracking-tight text-white">
-              Balqish <br />
-              <span className="text-sky-400">Warehouse</span>
+              Ballqish <br />
+              <span className="text-sky-400">Gudang</span>
             </span>
           </div>
 
           <div className="relative z-10">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-sky-300">
               <ShieldCheck size={14} />
-              Enterprise Warehouse Workspace
+              Ruang Kerja Gudang Terintegrasi
             </div>
             <h1 className="mb-4 text-5xl font-black leading-tight text-white xl:text-6xl">
               Operasional gudang yang rapi, cerdas, dan siap demo.
             </h1>
             <p className="max-w-xl text-lg leading-8 text-slate-400">
-              Frontend ini disiapkan untuk mengelola produk, mutasi stok, analytics, dan insight gudang Ballqish dengan pengalaman yang lebih profesional.
+              Aplikasi ini disiapkan untuk mengelola produk, mutasi stok, analitik, dan wawasan gudang Ballqish dengan pengalaman yang lebih profesional.
             </p>
           </div>
 
           <div className="relative z-10 grid grid-cols-3 gap-4">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Modules</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Modul</p>
               <p className="mt-3 text-3xl font-black text-white">32</p>
               <p className="mt-1 text-sm text-slate-400">API routes terintegrasi</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Visibility</p>
-              <p className="mt-3 text-3xl font-black text-white">Live</p>
-              <p className="mt-1 text-sm text-slate-400">Insight stok & mutasi</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Visibilitas</p>
+              <p className="mt-3 text-3xl font-black text-white">Langsung</p>
+              <p className="mt-1 text-sm text-slate-400">Wawasan stok & mutasi</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Map Ready</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Peta Siap</p>
               <p className="mt-3 text-3xl font-black text-white">Leaflet</p>
               <p className="mt-1 text-sm text-slate-400">Siap integrasi lokasi</p>
             </div>
           </div>
 
-          <div className="relative z-10 text-sm text-slate-500">&copy; 2026 Balqish Enterprise.</div>
+          <div className="relative z-10 text-sm text-slate-500">&copy; 2026 Ballqish Enterprise.</div>
         </div>
 
         <div className="flex w-full items-center justify-center p-6 sm:p-10 xl:w-[46%] xl:p-16">
@@ -111,10 +111,10 @@ function LoginContent() {
             <div className="text-center xl:text-left">
               <div className="mb-6 flex items-center justify-center gap-2 xl:hidden">
                 <Warehouse className="text-sky-600" size={28} />
-                <span className="text-xl font-black uppercase tracking-tight">Balqish Warehouse</span>
+                <span className="text-xl font-black uppercase tracking-tight">Gudang Ballqish</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Secure Access</p>
-              <h2 className="mt-2 text-3xl font-black text-slate-900">Masuk ke workspace gudang</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Akses Aman</p>
+              <h2 className="mt-2 text-3xl font-black text-slate-900">Masuk ke ruang kerja gudang</h2>
               <p className="mt-2 leading-7 text-slate-500">
                 Gunakan akun backend yang sudah terdaftar untuk mengakses dashboard operasional WMS Ballqish.
               </p>
@@ -135,7 +135,7 @@ function LoginContent() {
             <form onSubmit={handleLogin} className="mt-8 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Email Address</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Alamat Email</label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                       <Mail size={18} />
@@ -144,7 +144,7 @@ function LoginContent() {
                       type="email"
                       required
                       className="block w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-sky-500"
-                      placeholder="isikan email anda"
+                      placeholder="Masukkan email Anda"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -152,7 +152,7 @@ function LoginContent() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Password</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi</label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                       <Lock size={18} />
@@ -161,7 +161,7 @@ function LoginContent() {
                       type="password"
                       required
                       className="block w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-sky-500"
-                      placeholder="isikan password anda"
+                      placeholder="Masukkan kata sandi Anda"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -174,7 +174,7 @@ function LoginContent() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 p-4 font-bold text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span>{loading ? 'Memverifikasi...' : 'Sign In'}</span>
+                <span>{loading ? 'Memverifikasi...' : 'Masuk'}</span>
                 {!loading ? <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /> : null}
               </button>
             </form>

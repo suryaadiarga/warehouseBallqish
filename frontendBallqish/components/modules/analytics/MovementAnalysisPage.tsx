@@ -77,31 +77,31 @@ export function MovementAnalysisPage() {
   const selectedWarehouseName = warehouses.find((warehouse) => String(warehouse.id) === warehouseId)?.name ?? 'Semua gudang';
 
   if (loading) {
-    return <LoadingState title="Memuat movement analysis" description="Mengambil analisis rata-rata pengeluaran dan ranking pergerakan produk dari backend." />;
+    return <LoadingState title="Memuat analisis pergerakan" description="Mengambil analisis rata-rata pengeluaran dan peringkat pergerakan produk dari backend." />;
   }
 
   if (error) {
-    return <ErrorState title="Movement analysis gagal dimuat" description={error} />;
+    return <ErrorState title="Analisis pergerakan gagal dimuat" description={error} />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Smart Inventory"
-        title="Movement Analysis"
-        description="Forecast 90 hari menggunakan EWMA dan Croston/SBA untuk membaca fast moving, slow moving, serta risiko stockout."
+        eyebrow="Inventaris Cerdas"
+        title="Analisis Pergerakan"
+        description="Prediksi 90 hari menggunakan EWMA dan Croston/SBA untuk membaca pergerakan cepat, pergerakan lambat, serta risiko stock habis."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Analyzed Products" value={items.length} icon={ChartColumn} description={`Lookback ${meta?.lookback_days ?? 30} hari dari backend.`} />
-        <MetricCard label="Fast Moving" value={fastMoving.length} icon={ArrowUpWideNarrow} tone="emerald" description={`Produk dengan avg usage tertinggi pada scope ${selectedWarehouseName}.`} />
-        <MetricCard label="Slow Moving" value={slowMoving.length} icon={ArrowDownWideNarrow} tone="amber" description="Produk aktif dengan avg usage terendah." />
+        <MetricCard label="Produk Dianalisis" value={items.length} icon={ChartColumn} description={`Periode tinjauan ${meta?.lookback_days ?? 30} hari dari backend.`} />
+        <MetricCard label="Pergerakan Cepat" value={fastMoving.length} icon={ArrowUpWideNarrow} tone="emerald" description={`Produk dengan rata-rata penggunaan tertinggi pada cakupan ${selectedWarehouseName}.`} />
+        <MetricCard label="Pergerakan Lambat" value={slowMoving.length} icon={ArrowDownWideNarrow} tone="amber" description="Produk aktif dengan rata-rata penggunaan terendah." />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h3 className="text-lg font-black text-slate-900">Filter Scope</h3>
+            <h3 className="text-lg font-black text-slate-900">Cakupan Filter</h3>
             <p className="mt-1 text-sm text-slate-500">Analisis saat ini untuk {selectedWarehouseName}.</p>
           </div>
           <div className="flex w-full max-w-md gap-3">
@@ -121,7 +121,7 @@ export function MovementAnalysisPage() {
 
         {items.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada analisis pergerakan" description="Belum ada data mutasi approved yang cukup untuk dihitung pada scope ini." />
+            <EmptyState title="Belum ada analisis pergerakan" description="Belum ada data mutasi yang disetujui dan cukup untuk dihitung pada cakupan ini." />
           </div>
         ) : (
           <>
@@ -132,7 +132,7 @@ export function MovementAnalysisPage() {
                     <ArrowUpWideNarrow size={18} />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900">Fast Moving Products</h4>
+                    <h4 className="text-base font-black text-slate-900">Produk Bergerak Cepat</h4>
                     <p className="mt-1 text-sm text-slate-500">Produk dengan penggunaan harian tertinggi.</p>
                   </div>
                 </div>
@@ -155,7 +155,7 @@ export function MovementAnalysisPage() {
                     <ArrowDownWideNarrow size={18} />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900">Slow Moving Products</h4>
+                    <h4 className="text-base font-black text-slate-900">Produk Bergerak Lambat</h4>
                     <p className="mt-1 text-sm text-slate-500">Produk aktif dengan pergerakan paling lambat.</p>
                   </div>
                 </div>
@@ -179,9 +179,9 @@ export function MovementAnalysisPage() {
                   <tr>
                     <th className="px-6 py-4">Rank</th>
                     <th className="px-6 py-4">Produk</th>
-                    <th className="px-6 py-4">Forecast</th>
-                    <th className="px-6 py-4">Outbound 30 Hari</th>
-                    <th className="px-6 py-4">Stockout</th>
+                    <th className="px-6 py-4">Prediksi</th>
+                    <th className="px-6 py-4">Keluar 30 Hari</th>
+                    <th className="px-6 py-4">Stock Habis</th>
                     <th className="px-6 py-4">Status</th>
                   </tr>
                 </thead>

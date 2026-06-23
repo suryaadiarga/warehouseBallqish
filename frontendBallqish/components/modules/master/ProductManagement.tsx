@@ -155,9 +155,9 @@ export function ProductManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Master Data"
-        title="Products"
-        description="Kelola master produk, stok ringkasan, kategori, dan parameter minimum stock yang dipakai backend WMS."
+        eyebrow="Data Master"
+        title="Produk"
+        description="Kelola data master produk, ringkasan stok, kategori, dan parameter stok minimum yang dipakai backend WMS."
         action={
           <button
             type="button"
@@ -193,7 +193,7 @@ export function ProductManagement() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Min Stock Level</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Batas Minimum Stok</label>
               <input type="number" min={0} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.min_stock_level} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, min_stock_level: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div>
@@ -205,7 +205,7 @@ export function ProductManagement() {
               <input type="number" min={1} max={365} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.lead_time_days} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, lead_time_days: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Safety Stock</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Stok Pengaman</label>
               <input type="number" min={0} step={1} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" value={form.safety_stock} onFocus={(event) => event.currentTarget.select()} onChange={(e) => setForm((current) => ({ ...current, safety_stock: e.target.value.replace(/^0+(?=\d)/, '') }))} required />
             </div>
             <div className="md:col-span-2 xl:col-span-3">
@@ -254,7 +254,7 @@ export function ProductManagement() {
                     <th className="px-6 py-4">Produk</th>
                     <th className="px-6 py-4">Kategori</th>
                     <th className="px-6 py-4">Stok</th>
-                    <th className="px-6 py-4">Min Stock</th>
+                    <th className="px-6 py-4">Stok Minimum</th>
                     <th className="px-6 py-4">Aksi</th>
                   </tr>
                 </thead>

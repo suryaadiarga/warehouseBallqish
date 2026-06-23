@@ -78,13 +78,13 @@ export function MutationReportsPage() {
       showToast({
         type: 'info',
         title: 'Tidak ada data',
-        description: 'Tidak ada baris report yang bisa diekspor pada filter saat ini.',
+        description: 'Tidak ada baris laporan yang bisa diekspor pada filter saat ini.',
       });
       return;
     }
 
     const rows = [
-      ['Reference', 'Tanggal', 'Produk', 'SKU', 'Type', 'Source', 'Qty', 'Status', 'Created By', 'Approved By', 'Catatan'],
+      ['Referensi', 'Tanggal', 'Produk', 'SKU', 'Tipe', 'Sumber', 'Jumlah', 'Status', 'Dibuat Oleh', 'Disetujui Oleh', 'Catatan'],
       ...mutations.map((item) => [
         item.reference_number || '-',
         formatDateTimeId(item.created_at),
@@ -112,7 +112,7 @@ export function MutationReportsPage() {
   };
 
   if (loading) {
-    return <LoadingState title="Memuat laporan mutasi" description="Mengambil histori mutation report dari backend inventory." />;
+    return <LoadingState title="Memuat laporan mutasi" description="Mengambil riwayat laporan mutasi dari backend inventaris." />;
   }
 
   if (error) {
@@ -122,13 +122,13 @@ export function MutationReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Audit & Reporting"
-        title="Mutation Reports"
+        eyebrow="Audit & Pelaporan"
+        title="Laporan Mutasi"
         description="Laporan mutasi premium untuk audit operasional gudang, dilengkapi filter tanggal dan export CSV."
         action={
           <button type="button" onClick={exportCsv} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 font-bold text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-600">
             <Download size={18} />
-            <span>Export CSV</span>
+            <span>Ekspor CSV</span>
           </button>
         }
       />
@@ -136,22 +136,22 @@ export function MutationReportsPage() {
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h3 className="text-lg font-black text-slate-900">Filter Report</h3>
-            <p className="mt-1 text-sm text-slate-500">Gunakan rentang tanggal untuk memeriksa mutasi pada periode tertentu. Endpoint report backend saat ini mengirim detail produk dan aktor, tetapi belum menyertakan relasi gudang.</p>
+            <h3 className="text-lg font-black text-slate-900">Filter Laporan</h3>
+            <p className="mt-1 text-sm text-slate-500">Gunakan rentang tanggal untuk memeriksa mutasi pada periode tertentu. Endpoint laporan backend saat ini mengirim detail produk dan pelaksana, tetapi belum menyertakan relasi gudang.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <input type="date" value={filters.start_date} onChange={(e) => setFilters((current) => ({ ...current, start_date: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500" />
             <input type="date" value={filters.end_date} onChange={(e) => setFilters((current) => ({ ...current, end_date: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500" />
             <button type="button" onClick={() => void loadData(1, filters)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 font-bold text-white transition hover:bg-slate-800">
               <Filter size={16} />
-              <span>Apply</span>
+              <span>Terapkan</span>
             </button>
           </div>
         </div>
 
         {mutations.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada report" description="Tidak ada mutasi yang cocok dengan filter laporan saat ini." />
+            <EmptyState title="Belum ada laporan" description="Tidak ada mutasi yang cocok dengan filter laporan saat ini." />
           </div>
         ) : (
           <>
@@ -160,12 +160,12 @@ export function MutationReportsPage() {
                 <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                   <tr>
                     <th className="px-6 py-4">Tanggal</th>
-                    <th className="px-6 py-4">Reference</th>
+                    <th className="px-6 py-4">Referensi</th>
                     <th className="px-6 py-4">Produk</th>
-                    <th className="px-6 py-4">Movement</th>
-                    <th className="px-6 py-4">Qty</th>
+                    <th className="px-6 py-4">Pergerakan</th>
+                    <th className="px-6 py-4">Jumlah</th>
                     <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Actors</th>
+                    <th className="px-6 py-4">Pelaksana</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -188,8 +188,8 @@ export function MutationReportsPage() {
                         {mutation.status === 'approved' ? <StatusBadge label="approved" tone="safe" /> : <StatusBadge label="draft" tone="warning" />}
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-600">
-                        <p>Created: {mutation.user?.name || '-'}</p>
-                        <p className="mt-1">Approved: {mutation.approver?.name || '-'}</p>
+                        <p>Dibuat oleh: {mutation.user?.name || '-'}</p>
+                        <p className="mt-1">Disetujui oleh: {mutation.approver?.name || '-'}</p>
                         <p className="mt-1 text-slate-500">{mutation.reason || mutation.note || 'Tanpa catatan'}</p>
                       </td>
                     </tr>
@@ -200,8 +200,8 @@ export function MutationReportsPage() {
 
             <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 text-sm text-slate-500">
               <div className="flex gap-6">
-                <span>Total IN: <strong className="text-slate-800">{meta?.total_in ?? 0}</strong></span>
-                <span>Total OUT: <strong className="text-slate-800">{meta?.total_out ?? 0}</strong></span>
+                <span>Total Masuk: <strong className="text-slate-800">{meta?.total_in ?? 0}</strong></span>
+                <span>Total Keluar: <strong className="text-slate-800">{meta?.total_out ?? 0}</strong></span>
               </div>
               <div className="flex items-center gap-3">
                 <button

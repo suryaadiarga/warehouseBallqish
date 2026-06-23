@@ -77,7 +77,7 @@ export function StockAlertsPage() {
   const selectedWarehouseName = warehouses.find((warehouse) => String(warehouse.id) === warehouseId)?.name ?? 'Semua gudang';
 
   if (loading) {
-    return <LoadingState title="Memuat stock alerts" description="Mengambil hasil analitik stok kritis dan prediksi stockout dari backend." />;
+    return <LoadingState title="Memuat peringatan stok" description="Mengambil hasil analitik stok kritis dan prediksi stock habis dari backend." />;
   }
 
   if (error) {
@@ -87,21 +87,21 @@ export function StockAlertsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Smart Inventory"
-        title="Stock Alerts"
-        description="Deteksi hybrid menggunakan EWMA untuk demand stabil, Croston/SBA untuk demand intermittent, serta critical score berbasis lead time dan safety stock."
+        eyebrow="Inventaris Cerdas"
+        title="Peringatan Stok"
+        description="Deteksi gabungan menggunakan EWMA untuk permintaan stabil, Croston/SBA untuk permintaan berselang, serta skor kritis berbasis waktu tunggu dan stok pengaman."
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <MetricCard label="Critical Products" value={criticalCount} icon={AlertTriangle} tone="rose" description="Produk yang diprediksi akan habis sangat cepat atau stoknya terlalu rendah." />
-        <MetricCard label="Warning Products" value={warningCount} icon={AlertTriangle} tone="amber" description="Produk yang sudah mendekati batas minimum stok." />
-        <MetricCard label="Suggested Restock" value={totalRecommendation} icon={PackageSearch} tone="emerald" description="Total rekomendasi restock dari hasil analitik saat ini." />
+        <MetricCard label="Produk Kritis" value={criticalCount} icon={AlertTriangle} tone="rose" description="Produk yang diprediksi akan habis sangat cepat atau stoknya terlalu rendah." />
+        <MetricCard label="Produk Waspada" value={warningCount} icon={AlertTriangle} tone="amber" description="Produk yang sudah mendekati batas minimum stok." />
+        <MetricCard label="Saran Pengisian Ulang" value={totalRecommendation} icon={PackageSearch} tone="emerald" description="Total rekomendasi pengisian ulang dari hasil analitik saat ini." />
       </div>
 
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h3 className="text-lg font-black text-slate-900">Filter Warehouse</h3>
+            <h3 className="text-lg font-black text-slate-900">Filter Gudang</h3>
             <p className="mt-1 text-sm text-slate-500">Scope alert saat ini: {selectedWarehouseName}.</p>
           </div>
           <div className="flex w-full max-w-md gap-3">
@@ -121,7 +121,7 @@ export function StockAlertsPage() {
 
         {alerts.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Tidak ada alert aktif" description="Semua produk berada pada status aman untuk scope warehouse yang dipilih." />
+            <EmptyState title="Tidak ada peringatan aktif" description="Semua produk berada pada status aman untuk cakupan gudang yang dipilih." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -129,11 +129,11 @@ export function StockAlertsPage() {
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                 <tr>
                   <th className="px-6 py-4">Produk</th>
-                  <th className="px-6 py-4">Current / Min</th>
-                  <th className="px-6 py-4">AI Forecast</th>
+                  <th className="px-6 py-4">Saat Ini / Minimum</th>
+                  <th className="px-6 py-4">Prediksi AI</th>
                   <th className="px-6 py-4">Prediksi Habis</th>
                   <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Restock</th>
+                  <th className="px-6 py-4">Pengisian Ulang</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -159,9 +159,9 @@ export function StockAlertsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge label={alert.status} tone={alert.status === 'critical' ? 'critical' : alert.status === 'warning' ? 'warning' : 'safe'} />
-                      <p className="mt-2 text-xs font-bold text-slate-700">Risk {alert.critical_score}/100</p>
-                      <p className="mt-1 text-xs text-slate-500">Confidence {alert.confidence_score}%</p>
-                      {alert.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Demand spike</p> : null}
+                      <p className="mt-2 text-xs font-bold text-slate-700">Risiko {alert.critical_score}/100</p>
+                      <p className="mt-1 text-xs text-slate-500">Tingkat keyakinan {alert.confidence_score}%</p>
+                      {alert.demand_spike ? <p className="mt-1 text-xs font-bold text-rose-600">Lonjakan permintaan</p> : null}
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-black text-emerald-700">{alert.recommended_restock_qty}</p>
