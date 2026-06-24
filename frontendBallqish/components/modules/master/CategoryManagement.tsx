@@ -5,7 +5,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { FolderTree, Plus, Trash2 } from 'lucide-react';
+import { FolderTree, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type Category = {
@@ -18,9 +18,6 @@ export function CategoryManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -41,31 +38,6 @@ export function CategoryManagement() {
   useEffect(() => {
     void loadData();
   }, []);
-
-  const submitCategory = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-
-    try {
-      const response = await api.post<ApiEnvelope<null>>('/categories', { name });
-      showToast({
-        type: 'success',
-        title: 'Kategori ditambahkan',
-        description: response.data.message,
-      });
-      setName('');
-      setShowForm(false);
-      await loadData();
-    } catch (err: unknown) {
-      showToast({
-        type: 'error',
-        title: 'Kategori gagal ditambahkan',
-        description: extractApiErrorMessage(err, 'Periksa nama kategori Anda.'),
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const deleteCategory = async (category: Category) => {
     setDeleteLoading(true);
@@ -100,29 +72,8 @@ export function CategoryManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Data Master"
         title="Kategori"
-        action={
-          <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-700">
-            <Plus size={18} />
-            <span>{showForm ? 'Tutup Form' : 'Tambah Kategori'}</span>
-          </button>
-        }
       />
-
-      {showForm ? (
-        <section className="surface-card rounded-[28px] p-6">
-          <form onSubmit={submitCategory} className="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-bold text-slate-700">Nama Kategori</label>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-emerald-500" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
-              {submitting ? 'Menyimpan...' : 'Simpan Kategori'}
-            </button>
-          </form>
-        </section>
-      ) : null}
 
       <section className="surface-card rounded-[28px] overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-5">

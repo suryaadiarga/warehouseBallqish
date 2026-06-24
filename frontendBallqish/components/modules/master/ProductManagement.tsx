@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { ChevronLeft, ChevronRight, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -170,17 +170,7 @@ export function ProductManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Data Master"
         title="Produk"
-        action={
-          <Link
-            href="/dashboard/operations?tab=movements"
-            className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700"
-          >
-            <Plus size={18} />
-            <span>Tambah Stok</span>
-          </Link>
-        }
       />
 
       {showForm ? (

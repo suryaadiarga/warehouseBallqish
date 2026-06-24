@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import api from '@/lib/api';
-import { Plus, Trash2, Box, FolderTree } from 'lucide-react';
-import Link from 'next/link';
+import { Trash2, Box, FolderTree } from 'lucide-react';
 
 type Category = {
     id: number;
@@ -45,11 +44,6 @@ const getErrorMessage = (err: unknown, fallback: string) => {
 
 export default function InventoryView({ products, categories, onRefresh, pagination, onPageChange, loadingProducts, productSearch, categoryFilter, onProductSearchChange, onCategoryFilterChange }: InventoryViewProps) {
     const [activeTab, setActiveTab] = useState('products'); // 'products' | 'categories'
-    const [loading, setLoading] = useState(false);
-
-    // State Kategori
-    const [showCatForm, setShowCatForm] = useState(false);
-    const [catName, setCatName] = useState('');
 
     const handleDeleteProduct = async (id: number, name: string) => {
         if (!confirm(`Yakin ingin menghapus produk ${name}?`)) return;
@@ -58,23 +52,6 @@ export default function InventoryView({ products, categories, onRefresh, paginat
             onRefresh();
         } catch {
             alert("Gagal menghapus produk. Pastikan tidak ada histori mutasi terkait.");
-        }
-    };
-
-    // --- HANDLER KATEGORI ---
-    const handleCategorySubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await api.post('/categories', { name: catName });
-            setShowCatForm(false);
-            setCatName('');
-            onRefresh();
-            alert("Kategori berhasil ditambahkan!");
-        } catch (err: unknown) {
-            alert(getErrorMessage(err, "Gagal menambahkan kategori"));
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -113,12 +90,6 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                         <div>
                             <h2 className="text-xl font-black">Inventaris Gudang</h2>
                         </div>
-                        <Link 
-                            href="/dashboard/operations?tab=movements"
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all shadow-md"
-                        >
-                            <Plus size={20} /> <span>Tambah Stok</span>
-                        </Link>
                     </div>
 
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3">
@@ -214,34 +185,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                         <div>
                             <h2 className="text-xl font-black">Manajemen Kategori</h2>
                         </div>
-                        <button 
-                            onClick={() => setShowCatForm(!showCatForm)}
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all shadow-md"
-                        >
-                            <Plus size={20} /> <span>{showCatForm ? 'Batal' : 'Kategori Baru'}</span>
-                        </button>
                     </div>
-
-                    {showCatForm && (
-                        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-inner">
-                            <form onSubmit={handleCategorySubmit} className="flex space-x-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Nama Kategori Baru</label>
-                                    <input 
-                                        type="text" 
-                                        required 
-                                        placeholder="Contoh: Alat Tulis Kantor"
-                                        className="w-full p-3 border border-slate-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500" 
-                                        value={catName} 
-                                        onChange={e => setCatName(e.target.value)} 
-                                    />
-                                </div>
-                                <button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold w-48 h-[52px]">
-                                    {loading ? 'Menyimpan...' : 'Simpan Kategori'}
-                                </button>
-                            </form>
-                        </div>
-                    )}
 
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden text-black max-w-3xl">
                         <table className="w-full text-left">

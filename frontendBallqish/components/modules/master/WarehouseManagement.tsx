@@ -86,7 +86,6 @@ export function WarehouseManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Data Master Gudang"
         title="Manajemen Gudang"
         action={
           <button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700">
