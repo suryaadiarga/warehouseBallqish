@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/query_views.dart';
+import '../../auth/data/auth_service.dart';
 import '../../products/data/product_model.dart';
 import '../../shared/crud_services.dart';
 import '../../warehouse_locations/data/warehouse_location_model.dart';
@@ -19,12 +20,49 @@ class TransferListScreen extends StatefulWidget {
 
 class _TransferListScreenState extends State<TransferListScreen> {
   final _service = TransferService();
+  final _auth = AuthService();
   String? _status;
+  String? _role;
   late Future<List<dynamic>> _future = _service.all();
 
   void _reload() => setState(() => _future = _service.all(status: _status));
 
+  void _selectStatus(String? status) {
+    setState(() {
+      _status = status;
+      _future = _service.all(status: status);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final user = await _auth.storedUser();
+    if (!mounted) return;
+    setState(() => _role = user?['role']?.toString());
+  }
+
+  bool get _canCreateTransfer =>
+      _role == 'super_admin' ||
+      _role == 'warehouse_manager' ||
+      _role == 'warehouse_staff';
+
   Future<void> _create() async {
+    if (!_canCreateTransfer) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hanya Warehouse Manager atau Warehouse Staff yang dapat membuat transfer.',
+          ),
+        ),
+      );
+      return;
+    }
+
     try {
       final products = await ProductService().all();
       final warehouses = await WarehouseService().all();
@@ -288,6 +326,7 @@ class _TransferListScreenState extends State<TransferListScreen> {
     const filters = <String?, String>{
       null: 'Semua',
       'pending': 'Pending',
+      'approved': 'Disetujui',
       'in_transit': 'Perjalanan',
       'arrived': 'Sampai',
       'discrepancy': 'Selisih',
@@ -308,10 +347,7 @@ class _TransferListScreenState extends State<TransferListScreen> {
                       child: ChoiceChip(
                         label: Text(entry.value),
                         selected: _status == entry.key,
-                        onSelected: (_) {
-                          _status = entry.key;
-                          _reload();
-                        },
+                        onSelected: (_) => _selectStatus(entry.key),
                       ),
                     ),
                   )
@@ -333,7 +369,8 @@ class _TransferListScreenState extends State<TransferListScreen> {
                 }
                 final rows = snapshot.data ?? [];
                 if (rows.isEmpty) {
-                  return const EmptyView(title: 'Belum ada transfer');
+                  final label = filters[_status]?.toLowerCase() ?? 'transfer';
+                  return EmptyView(title: 'Belum ada transfer $label');
                 }
                 return RefreshIndicator(
                   onRefresh: () async => _reload(),

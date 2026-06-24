@@ -9,13 +9,11 @@ class ProductImage extends StatelessWidget {
     required this.imageUrl,
     this.size = 58,
     this.borderRadius = 14,
-    this.showIllustrationLabel = false,
   });
 
   final String? imageUrl;
   final double size;
   final double borderRadius;
-  final bool showIllustrationLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -42,28 +40,6 @@ class ProductImage extends StatelessWidget {
                 ),
               ),
             ),
-            if (showIllustrationLabel)
-              const Positioned(
-                left: 3,
-                bottom: 3,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Color(0xB8020617),
-                    borderRadius: BorderRadius.all(Radius.circular(4)),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    child: Text(
-                      'ILUSTRASI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 6,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

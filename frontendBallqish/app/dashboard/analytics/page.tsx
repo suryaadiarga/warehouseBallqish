@@ -3,8 +3,8 @@ import { StockAlertsPage } from '@/components/modules/analytics/StockAlertsPage'
 import { ModuleTabs } from '@/components/ui/ModuleTabs';
 
 const tabs = [
-  { id: 'alerts', label: 'Peringatan Stok', description: 'Waspada dan kritis' },
-  { id: 'movement', label: 'Analisis Pergerakan', description: 'Pergerakan cepat & lambat' },
+  { id: 'alerts', label: 'Peringatan Stok' },
+  { id: 'movement', label: 'Analisis Pergerakan' },
 ];
 
 export default async function AnalyticsWorkspace({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {

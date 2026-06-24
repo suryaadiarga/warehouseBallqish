@@ -3,8 +3,8 @@ import { StockAuditsPage } from '@/components/modules/operations/StockAuditsPage
 import { ModuleTabs } from '@/components/ui/ModuleTabs';
 
 const tabs = [
-  { id: 'audit', label: 'Audit Rak', description: 'Hitung stok fisik' },
-  { id: 'adjustments', label: 'Penyesuaian', description: 'Kerusakan, hilang, koreksi' },
+  { id: 'audit', label: 'Audit Rak' },
+  { id: 'adjustments', label: 'Penyesuaian' },
 ];
 
 export default async function StockAuditsRoute({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {

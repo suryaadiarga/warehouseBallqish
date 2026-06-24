@@ -35,16 +35,10 @@ type MovementItem = {
   recommended_restock_qty: number;
 };
 
-type MovementMeta = {
-  warehouse_id?: number | null;
-  lookback_days?: number;
-};
-
 export function MovementAnalysisPage() {
   const [items, setItems] = useState<MovementItem[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [warehouseId, setWarehouseId] = useState('');
-  const [meta, setMeta] = useState<MovementMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -61,7 +55,6 @@ export function MovementAnalysisPage() {
       ]);
 
       setItems(analysisRes.data.data);
-      setMeta((analysisRes.data.meta as MovementMeta | undefined) ?? null);
       setWarehouses(warehouseRes.data.data);
     } catch (err: unknown) {
       setError(extractApiErrorMessage(err, 'Gagal memuat movement analysis.'));

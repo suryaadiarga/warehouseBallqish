@@ -7,6 +7,7 @@ use App\Models\StockMutation;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseLocation;
+use App\Support\UserRoles;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -22,8 +23,8 @@ class StockMutationSeeder extends Seeder
         mt_srand(20260623);
         StockMutation::query()->delete();
 
-        $staff = User::query()->where('role', 'staff')->firstOrFail();
-        $admin = User::query()->where('role', 'admin_gudang')->firstOrFail();
+        $staff = User::query()->where('role', UserRoles::WAREHOUSE_STAFF)->firstOrFail();
+        $admin = User::query()->where('role', UserRoles::WAREHOUSE_MANAGER)->firstOrFail();
         $products = Product::query()->with('category:id,name')->orderBy('id')->get();
 
         if ($products->count() !== self::EXPECTED_PRODUCTS) {

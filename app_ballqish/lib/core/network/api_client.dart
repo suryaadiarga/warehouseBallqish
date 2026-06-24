@@ -26,8 +26,8 @@ class ApiClient {
     return _send('PUT', path, body: body);
   }
 
-  Future<dynamic> delete(String path) {
-    return _send('DELETE', path);
+  Future<dynamic> delete(String path, {Map<String, dynamic>? body}) {
+    return _send('DELETE', path, body: body);
   }
 
   Future<dynamic> _send(
@@ -62,11 +62,17 @@ class ApiClient {
           headers: headers,
           body: jsonEncode(body ?? {}),
         ),
-        'DELETE' => await _httpClient.delete(uri, headers: headers),
+        'DELETE' => await _httpClient.delete(
+          uri,
+          headers: headers,
+          body: jsonEncode(body ?? {}),
+        ),
         _ => throw UnsupportedError(method),
       };
     } catch (_) {
-      throw const ApiException('Tidak bisa terhubung ke server API.');
+      throw ApiException(
+        'Tidak bisa terhubung ke server API (${ApiConfig.baseUrl}). Pastikan backend berjalan.',
+      );
     }
 
     final payload = response.body.isEmpty ? null : jsonDecode(response.body);

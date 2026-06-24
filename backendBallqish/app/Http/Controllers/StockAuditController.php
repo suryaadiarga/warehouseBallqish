@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreStockAuditRequest;
 use App\Models\StockAudit;
 use App\Services\StockAuditService;
+use App\Support\UserRoles;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -47,8 +48,8 @@ class StockAuditController extends Controller
 
     public function complete(int $id, Request $request)
     {
-        if (! in_array($request->user()->role, ['admin_gudang', 'superadmin', 'super_admin'], true)) {
-            return $this->errorResponse('Hanya admin yang dapat menyelesaikan Audit Stok.', 403);
+        if (! UserRoles::can($request->user()->role, UserRoles::STOCK_CONTROLLERS)) {
+            return $this->errorResponse('Hanya Warehouse Manager atau Inventory Controller yang dapat menyelesaikan Audit Stok.', 403);
         }
         try {
             return $this->successResponse($this->auditService->complete($id, $request->user()->id), 'Audit selesai dan mutasi rekonsiliasi dibuat otomatis.');

@@ -80,11 +80,10 @@ export function ProductStockCardPage({ productId }: { productId: string }) {
       />
 
       <section className="surface-card flex items-center gap-4 rounded-[28px] p-5">
-        <ProductImage src={data.product.image_url} alt={data.product.name} showIllustrationLabel className="h-24 w-24 shrink-0 rounded-2xl border border-slate-200" />
+        <ProductImage src={data.product.image_url} alt={data.product.name} className="h-24 w-24 shrink-0 rounded-2xl border border-slate-200" />
         <div>
           <p className="font-mono text-xs text-slate-500">{data.product.sku}</p>
           <p className="mt-1 font-black text-slate-900">{data.product.name}</p>
-          <p className="mt-2 text-xs text-slate-500">Gambar ilustrasi berdasarkan jenis produk.</p>
         </div>
       </section>
 

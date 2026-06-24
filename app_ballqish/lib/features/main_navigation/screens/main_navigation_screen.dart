@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -5,6 +7,7 @@ import '../../auth/data/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
+import '../../notifications/data/notification_service.dart';
 import '../../notifications/screens/notification_screen.dart';
 import '../../transfers/screens/transfer_list_screen.dart';
 import 'more_screen.dart';
@@ -18,7 +21,10 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final _auth = AuthService();
+  final _notifications = NotificationService();
   var _index = 0;
+  var _unreadNotifications = 0;
+  Timer? _notificationTimer;
 
   final _pages = const [
     DashboardScreen(),
@@ -26,6 +32,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     TransferListScreen(),
     MoreScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadNotifications();
+    _notificationTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _loadUnreadNotifications(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notificationTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    try {
+      final rows = await _notifications.all();
+      final unread = rows.where((item) {
+        if (item is! Map<String, dynamic>) return false;
+        return item['read_at'] == null;
+      }).length;
+      if (!mounted) return;
+      setState(() => _unreadNotifications = unread);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _unreadNotifications = 0);
+    }
+  }
 
   Future<void> _logout() async {
     await _auth.logout();
@@ -61,7 +98,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Sistem Gudang',
+                  'Warehouse Management System',
                   style: TextStyle(
                     color: AppColors.slate900,
                     fontSize: 17,
@@ -79,12 +116,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationScreen()),
-            ),
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: AppColors.slate700,
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationScreen()),
+              );
+              _loadUnreadNotifications();
+            },
+            icon: Badge.count(
+              count: _unreadNotifications,
+              isLabelVisible: _unreadNotifications > 0,
+              child: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.slate700,
+              ),
             ),
             tooltip: 'Notifikasi',
           ),

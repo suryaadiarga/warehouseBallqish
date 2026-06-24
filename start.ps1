@@ -39,6 +39,25 @@ function Invoke-Checked {
     }
 }
 
+function Invoke-ComposerChecked {
+    param([string[]]$Arguments)
+
+    $composer = Get-Command composer -ErrorAction SilentlyContinue
+    if (-not $composer) {
+        throw "'composer' tidak ditemukan. Pasang Composer dan tambahkan ke PATH."
+    }
+
+    $composerPath = $composer.Source
+    $composerExtension = [System.IO.Path]::GetExtension($composerPath)
+
+    if ($composerExtension -eq '' -or $composerExtension -eq '.phar') {
+        Invoke-Checked -Command 'php' -Arguments (@($composerPath) + $Arguments)
+        return
+    }
+
+    Invoke-Checked -Command 'composer' -Arguments $Arguments
+}
+
 if (-not (Test-Path (Join-Path $backendPath 'artisan'))) {
     throw "Folder backend tidak ditemukan: $backendPath"
 }
@@ -63,7 +82,7 @@ if ($Install -or -not (Test-Path $autoloadPath)) {
     Write-Step 'Memasang dependency backend'
     Push-Location $backendPath
     try {
-        Invoke-Checked -Command 'composer' -Arguments @('install', '--no-interaction')
+        Invoke-ComposerChecked -Arguments @('install', '--no-interaction')
     }
     finally {
         Pop-Location
@@ -117,7 +136,7 @@ else {
 
 Write-Step 'Menjalankan backend pada http://localhost:8080'
 $escapedBackendPath = $backendPath.Replace("'", "''")
-$backendCommand = "Set-Location -LiteralPath '$escapedBackendPath'; php artisan serve --port=8080"
+$backendCommand = "Set-Location -LiteralPath '$escapedBackendPath'; php artisan serve --host=0.0.0.0 --port=8080"
 $backendProcess = Start-Process `
     -FilePath 'powershell.exe' `
     -ArgumentList @('-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $backendCommand) `
@@ -137,6 +156,7 @@ Write-Host ''
 Write-Host 'Project sedang dijalankan:' -ForegroundColor Green
 Write-Host '  Frontend: http://localhost:3000'
 Write-Host '  Backend : http://localhost:8080/api'
+Write-Host '  Mobile emulator API: http://10.0.2.2:8080/api'
 Write-Host ''
 Write-Host "Backend PID: $($backendProcess.Id), Frontend PID: $($frontendProcess.Id)"
 Write-Host 'Tutup kedua jendela server untuk menghentikan project.'

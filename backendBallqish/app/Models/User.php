@@ -44,4 +44,9 @@ class User extends Authenticatable
             ->implode('');
     }
 
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
 }

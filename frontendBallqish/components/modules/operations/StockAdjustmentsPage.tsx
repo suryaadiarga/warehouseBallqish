@@ -187,7 +187,7 @@ export function StockAdjustmentsPage() {
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
-        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Peran Anda bukan admin gudang. Backend bisa menolak penyesuaian jika otoritas tidak cukup.</div> : null}
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Hanya Warehouse Manager atau Inventory Controller yang dapat memproses penyesuaian stok.</div> : null}
 
         <form
           onSubmit={(event) => {

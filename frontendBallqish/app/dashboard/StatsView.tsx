@@ -1,11 +1,37 @@
-import { Package, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock, ChevronRight } from 'lucide-react';
+import { Package, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock } from 'lucide-react';
 
-export default function StatsView({ stats }: any) {
+type ProductSummary = {
+    id: number;
+    sku: string;
+    name: string;
+    stock: number;
+    min_stock_level?: number;
+};
+
+type ActivitySummary = {
+    id: number;
+    created_at: string;
+    product_name?: string;
+    product?: { name?: string };
+    type: string;
+    quantity: number;
+};
+
+type Stats = {
+    total_products?: number;
+    total_inbound_today?: number;
+    total_outbound_today?: number;
+    recent_activities?: ActivitySummary[];
+    low_stock_alerts?: ProductSummary[];
+    all_products?: ProductSummary[];
+};
+
+export default function StatsView({ stats }: { stats: Stats }) {
     // Ambil sebagian data dari mutations untuk recent activity (kalau ada)
     const recentActivities = stats.recent_activities?.slice(0, 5) || [];
     const lowStocks = (
         stats.low_stock_alerts?.slice(0, 5)
-        ?? stats.all_products?.filter((p: any) => p.stock <= (p.min_stock_level || 10)).slice(0, 5)
+        ?? stats.all_products?.filter((p) => p.stock <= (p.min_stock_level || 10)).slice(0, 5)
         ?? []
     );
 
@@ -84,7 +110,7 @@ export default function StatsView({ stats }: any) {
                     <div className="p-5 flex-1">
                         {lowStocks.length > 0 ? (
                             <div className="space-y-4">
-                                {lowStocks.map((item: any) => (
+                                {lowStocks.map((item) => (
                                     <div key={item.id} className="flex justify-between items-center pb-3 border-b border-slate-100 last:border-0 last:pb-0">
                                         <div>
                                             <p className="font-bold text-sm text-slate-800">{item.name}</p>
@@ -124,7 +150,7 @@ export default function StatsView({ stats }: any) {
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-700">
                                 {recentActivities.length > 0 ? (
-                                    recentActivities.map((act: any) => (
+                                    recentActivities.map((act) => (
                                         <tr key={act.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-5 py-3 text-slate-500 text-xs">{new Date(act.created_at).toLocaleString('id-ID')}</td>
                                             <td className="px-5 py-3 font-semibold">{act.product_name || act.product?.name || '-'}</td>

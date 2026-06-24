@@ -30,7 +30,7 @@ class DashboardController extends Controller
                 ->where('status', 'approved')
                 ->whereBetween('created_at', [today()->startOfDay(), today()->endOfDay()])
                 ->sum('quantity'),
-            'recent_activities' => StockMutation::with('product')
+            'recent_activities' => StockMutation::with('product:id,name,sku,image_key')
                 ->latest()
                 ->take(5)
                 ->get(),

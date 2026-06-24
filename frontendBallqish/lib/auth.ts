@@ -5,7 +5,8 @@ export type AuthUser = {
   role: string;
 };
 
-export const INVENTORY_ADMIN_ROLES = ['admin_gudang', 'superadmin', 'super_admin'] as const;
+export const INVENTORY_ADMIN_ROLES = ['super_admin', 'warehouse_manager', 'inventory_controller'] as const;
+export const TRANSFER_CREATOR_ROLES = ['super_admin', 'warehouse_manager', 'warehouse_staff'] as const;
 
 export function formatRoleLabel(role?: string) {
   if (!role) {
@@ -22,6 +23,10 @@ export function formatRoleLabel(role?: string) {
 
 export function hasInventoryAdminAccess(role?: string | null) {
   return INVENTORY_ADMIN_ROLES.includes((role ?? '') as (typeof INVENTORY_ADMIN_ROLES)[number]);
+}
+
+export function hasTransferCreateAccess(role?: string | null) {
+  return TRANSFER_CREATOR_ROLES.includes((role ?? '') as (typeof TRANSFER_CREATOR_ROLES)[number]);
 }
 
 export function buildLoginRedirectPath(pathname = '/login', search = '') {

@@ -24,6 +24,7 @@ class StockTransferStatusChanged extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'type' => 'stock_transfer',
             'title' => $this->title,
             'message' => $this->message,
             'transfer_id' => $this->transfer->id,
