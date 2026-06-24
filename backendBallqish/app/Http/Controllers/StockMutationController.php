@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreInventoryMovementRequest;
 use App\Http\Requests\StoreStockMutationRequest;
 use App\Models\StockMutation;
 use App\Services\StockMutationService;
+use App\Support\UserRoles;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -27,6 +29,24 @@ class StockMutationController extends Controller
         return $this->successResponse($mutation, 'Draft mutasi berhasil dibuat', 201);
     }
 
+    public function storeInventoryMovement(StoreInventoryMovementRequest $request)
+    {
+        try {
+            $mutation = $this->mutationService->createOperationalMovement(
+                $request->validated(),
+                $request->user()->id,
+                $request->user()->role
+            );
+
+            return $this->successResponse($mutation, 'Keluar masuk barang berhasil dicatat', 201);
+        } catch (Exception $e) {
+            $status = $e->getCode();
+            $status = is_int($status) && $status >= 400 && $status < 600 ? $status : 400;
+
+            return $this->errorResponse($e->getMessage(), $status);
+        }
+    }
+
     public function approve($id, Request $request)
     {
         try {
@@ -47,9 +67,8 @@ class StockMutationController extends Controller
     {
         $mutation = StockMutation::findOrFail($id);
 
-        $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
-        if (! in_array($request->user()->role, $allowedRoles)) {
-            return $this->errorResponse('Hanya admin yang bisa menolak mutasi.', 403);
+        if (! UserRoles::can($request->user()->role, UserRoles::MUTATION_APPROVERS)) {
+            return $this->errorResponse('Hanya Warehouse Manager atau Inventory Controller yang bisa menolak mutasi.', 403);
         }
 
         if ($mutation->status === 'approved') {

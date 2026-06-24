@@ -106,12 +106,24 @@ php artisan db:seed
 Jalankan backend di port **8080** (sesuai default frontend):
 
 ```bash
-php artisan serve --port=8080
+php artisan serve --host=0.0.0.0 --port=8080
 ```
 
 Backend API tersedia di:
 
 http://localhost:8080/api
+
+Untuk Android Emulator, gunakan:
+
+```txt
+http://10.0.2.2:8080/api
+```
+
+Untuk HP fisik, gunakan IP komputer di jaringan yang sama, contoh:
+
+```txt
+http://192.168.1.10:8080/api
+```
 
 ### 4. Setup & jalankan frontend (Next.js)
 
@@ -143,10 +155,12 @@ http://localhost:3000
 
 Setelah menjalankan `php artisan db:seed`, kamu bisa login dengan:
 
-| Role  | Email               | Password      |
-|------:|---------------------|---------------|
-| Admin | admin@warehouse.com | password123   |
-| Staff | staff@warehouse.com | password123   |
+| Role | Email | Password |
+|-----:|-------|----------|
+| Warehouse Manager | admin@warehouse.com | password123 |
+| Warehouse Staff | staff@warehouse.com | password123 |
+| Inventory Controller | inventory@warehouse.com | password123 |
+| Super Admin | boss@warehouse.com | password123 |
 
 ---
 
@@ -166,7 +180,7 @@ Seeder utama menjalankan: `UserSeeder`, `CategorySeeder`, `WarehouseSeeder`, `Su
 
 | Command | Deskripsi |
 |---------|----------|
-| `php artisan serve --port=8080` | Menjalankan API server |
+| `php artisan serve --host=0.0.0.0 --port=8080` | Menjalankan API server untuk web, emulator, dan device satu jaringan |
 | `php artisan queue:listen --tries=1` | Menjalankan queue worker (opsional) |
 | `composer run dev` | Menjalankan server + queue + Vite (opsional, 1 perintah) |
 | `composer run setup` | Install deps + copy env + generate key + migrate + build assets |

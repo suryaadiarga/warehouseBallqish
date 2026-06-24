@@ -6,6 +6,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Models\User;
+use App\Support\UserRoles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * REGISTRASI USER BARU (Opsional, biasanya untuk staff baru)
+     * REGISTRASI USER BARU (Opsional, biasanya untuk user gudang baru)
      */
     public function register(RegisterRequest $request)
     {
@@ -23,7 +24,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'staff',
+            'role' => $validated['role'] ?? UserRoles::WAREHOUSE_STAFF,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;

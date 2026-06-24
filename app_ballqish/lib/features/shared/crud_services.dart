@@ -5,6 +5,24 @@ import '../products/data/product_model.dart';
 import '../warehouse_locations/data/warehouse_location_model.dart';
 import '../warehouses/data/warehouse_model.dart';
 
+class Supplier {
+  const Supplier({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory Supplier.fromJson(Map<String, dynamic> json) =>
+      Supplier(id: json['id'] as int, name: json['name']?.toString() ?? '');
+}
+
+class SupplierService {
+  SupplierService({ApiClient? api}) : _api = api ?? ApiClient();
+  final ApiClient _api;
+  Future<List<Supplier>> all() async => dataList(
+    await _api.get('/suppliers') as Map<String, dynamic>,
+  ).cast<Map<String, dynamic>>().map(Supplier.fromJson).toList();
+}
+
 class CategoryService {
   CategoryService({ApiClient? api}) : _api = api ?? ApiClient();
   final ApiClient _api;

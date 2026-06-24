@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/product_image.dart';
 import '../../../core/widgets/query_views.dart';
 import '../data/dashboard_service.dart';
 import '../widgets/summary_card.dart';
@@ -86,16 +87,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ...recent.map((item) {
                   final map = item as Map<String, dynamic>;
                   final product = map['product'] is Map
-                      ? map['product']['name']
-                      : 'Produk';
+                      ? map['product'] as Map
+                      : null;
+                  final productName = product?['name'] ?? 'Produk';
+                  final imageUrl = product?['image_url']?.toString();
+                  final imageKey = product?['image_key']?.toString();
+                  final productImage =
+                      imageUrl ??
+                      (imageKey == null
+                          ? null
+                          : '/product-images/$imageKey.webp');
                   return Card(
                     child: ListTile(
-                      leading: Icon(
-                        map['type'] == 'in'
-                            ? Icons.add_circle_outline
-                            : Icons.remove_circle_outline,
+                      leading: ProductImage(
+                        imageUrl: productImage,
+                        size: 46,
+                        borderRadius: 12,
                       ),
-                      title: Text(product?.toString() ?? 'Produk'),
+                      title: Text(productName.toString()),
                       subtitle: Text(
                         '${map['mutation_source'] ?? 'manual'} - ${map['status'] ?? '-'}',
                       ),

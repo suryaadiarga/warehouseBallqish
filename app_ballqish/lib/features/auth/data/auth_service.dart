@@ -1,5 +1,6 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../notifications/data/push_notification_service.dart';
 
 class AuthService {
   AuthService({ApiClient? apiClient, TokenStorage? tokenStorage})
@@ -17,6 +18,7 @@ class AuthService {
     final token = data['access_token'].toString();
     final user = data['user'] as Map<String, dynamic>;
     await _storage.saveSession(token, user);
+    await PushNotificationService().syncDeviceToken();
     return user;
   }
 
@@ -29,6 +31,7 @@ class AuthService {
 
   Future<void> logout() async {
     try {
+      await PushNotificationService().unregisterDeviceToken();
       await _api.post('/logout');
     } finally {
       await _storage.clear();

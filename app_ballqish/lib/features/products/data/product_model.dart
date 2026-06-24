@@ -4,6 +4,7 @@ class Product {
   const Product({
     required this.id,
     required this.categoryId,
+    this.supplierId,
     required this.sku,
     required this.name,
     required this.stock,
@@ -17,6 +18,7 @@ class Product {
 
   final int id;
   final int categoryId;
+  final int? supplierId;
   final String sku;
   final String name;
   final int stock;
@@ -30,6 +32,7 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) => Product(
     id: json['id'] as int,
     categoryId: json['category_id'] as int,
+    supplierId: json['supplier_id'] as int?,
     sku: json['sku']?.toString() ?? '',
     name: json['name']?.toString() ?? '',
     stock: json['stock'] as int? ?? 0,

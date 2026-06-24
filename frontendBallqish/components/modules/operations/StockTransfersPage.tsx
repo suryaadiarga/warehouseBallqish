@@ -7,7 +7,7 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { hasInventoryAdminAccess } from '@/lib/auth';
+import { hasTransferCreateAccess } from '@/lib/auth';
 import { ArrowLeftRight, PackageSearch, Warehouse } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -46,7 +46,7 @@ export function StockTransfersPage() {
     note: '',
   });
 
-  const canOperate = hasInventoryAdminAccess(user?.role);
+  const canOperate = hasTransferCreateAccess(user?.role);
 
   const loadData = async () => {
     setLoading(true);
@@ -211,7 +211,7 @@ export function StockTransfersPage() {
       </div>
 
       <section className="surface-card rounded-[28px] p-6">
-        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Hanya admin gudang yang dapat memproses transfer.</div> : null}
+        {!canOperate ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Hanya Warehouse Manager atau Warehouse Staff yang dapat membuat transfer.</div> : null}
 
         <form
           onSubmit={(event) => {

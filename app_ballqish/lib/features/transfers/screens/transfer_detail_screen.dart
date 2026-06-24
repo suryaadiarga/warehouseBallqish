@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/widgets/query_views.dart';
+import '../../auth/data/auth_service.dart';
 import '../data/transfer_service.dart';
 
 const transferStatusLabels = <String, String>{
@@ -25,17 +26,59 @@ class TransferDetailScreen extends StatefulWidget {
 
 class _TransferDetailScreenState extends State<TransferDetailScreen> {
   final _service = TransferService();
+  final _auth = AuthService();
   late Future<Map<String, dynamic>> _future = _service.show(widget.transferId);
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final user = await _auth.storedUser();
+    if (!mounted) return;
+    setState(() => _role = user?['role']?.toString());
+  }
 
   void _reload() => setState(() => _future = _service.show(widget.transferId));
 
-  List<String> _actions(String status) => switch (status) {
-    'pending' => ['approved', 'rejected', 'cancelled'],
-    'approved' => ['in_transit', 'cancelled'],
-    'in_transit' => ['arrived', 'discrepancy'],
-    'arrived' => ['completed', 'discrepancy'],
-    'discrepancy' => ['completed'],
-    _ => [],
+  bool _canDo(String action) {
+    final role = _role;
+    if (role == 'super_admin') return true;
+
+    return switch (action) {
+      'approved' || 'rejected' || 'cancelled' => role == 'warehouse_manager',
+      'in_transit' ||
+      'arrived' => role == 'warehouse_manager' || role == 'warehouse_staff',
+      'completed' || 'discrepancy' =>
+        role == 'warehouse_manager' || role == 'inventory_controller',
+      _ => false,
+    };
+  }
+
+  List<String> _actions(String status) {
+    final available = switch (status) {
+      'pending' => ['approved', 'rejected', 'cancelled'],
+      'approved' => ['in_transit', 'cancelled'],
+      'in_transit' => ['arrived', 'discrepancy'],
+      'arrived' => ['completed', 'discrepancy'],
+      'discrepancy' => ['completed'],
+      _ => <String>[],
+    };
+
+    return available.where(_canDo).toList();
+  }
+
+  String _roleHint(String status) => switch (status) {
+    'pending' => 'Menunggu Warehouse Manager.',
+    'approved' => 'Menunggu Warehouse Staff memproses pengiriman.',
+    'in_transit' => 'Menunggu Warehouse Staff mengonfirmasi barang sampai.',
+    'arrived' => 'Menunggu Inventory Controller memvalidasi penerimaan.',
+    'discrepancy' =>
+      'Menunggu Inventory Controller atau Manager menyelesaikan selisih.',
+    _ => 'Tidak ada tindakan untuk role ini.',
   };
 
   Future<void> _changeStatus(
@@ -166,7 +209,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '${product?['name'] ?? 'Produk'} • ${transfer['quantity'] ?? 0} unit',
+                          '${product?['name'] ?? 'Produk'} - ${transfer['quantity'] ?? 0} unit',
                         ),
                         const Divider(height: 28),
                         Text(
@@ -219,7 +262,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                     ),
                     subtitle: Text(
                       '${user?['name'] ?? 'Sistem'}'
-                      '${history['note'] == null ? '' : ' • ${history['note']}'}',
+                      '${history['note'] == null ? '' : ' - ${history['note']}'}',
                     ),
                   );
                 }),
@@ -239,6 +282,18 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                         onPressed: () => _changeStatus(transfer, action),
                         child: Text(transferStatusLabels[action] ?? action),
                       ),
+                    ),
+                  ),
+                ] else if (![
+                  'completed',
+                  'rejected',
+                  'cancelled',
+                ].contains(status)) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Text(_roleHint(status)),
                     ),
                   ),
                 ],

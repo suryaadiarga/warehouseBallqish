@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { extractApiErrorMessage } from '@/lib/api';
-import { ArrowRight, Lock, Mail, ShieldCheck, Warehouse } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Warehouse } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 
@@ -67,40 +67,17 @@ function LoginContent() {
               <Warehouse size={30} />
             </div>
             <span className="text-2xl font-black uppercase tracking-tight text-white">
-              Ballqish <br />
-              <span className="text-sky-400">Gudang</span>
+              BALLQISH <span className="text-sky-400">WAREHOUSE</span>
             </span>
           </div>
 
           <div className="relative z-10">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-sky-300">
-              <ShieldCheck size={14} />
-              Ruang Kerja Gudang Terintegrasi
-            </div>
             <h1 className="mb-4 text-5xl font-black leading-tight text-white xl:text-6xl">
-              Kelola gudang dalam satu tempat.
+              Warehouse Management System
             </h1>
             <p className="max-w-xl text-lg leading-8 text-slate-400">
               Pantau produk, stok, mutasi, dan aktivitas gudang dengan mudah.
             </p>
-          </div>
-
-          <div className="relative z-10 grid grid-cols-3 gap-4">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Modul</p>
-              <p className="mt-3 text-3xl font-black text-white">32</p>
-              <p className="mt-1 text-sm text-slate-400">Fitur pengelolaan gudang</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Visibilitas</p>
-              <p className="mt-3 text-3xl font-black text-white">Langsung</p>
-              <p className="mt-1 text-sm text-slate-400">Wawasan stok & mutasi</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Peta Siap</p>
-              <p className="mt-3 text-3xl font-black text-white">Leaflet</p>
-              <p className="mt-1 text-sm text-slate-400">Siap integrasi lokasi</p>
-            </div>
           </div>
 
           <div className="relative z-10 text-sm text-slate-500">&copy; 2026 Ballqish Enterprise.</div>
@@ -111,10 +88,9 @@ function LoginContent() {
             <div className="text-center xl:text-left">
               <div className="mb-6 flex items-center justify-center gap-2 xl:hidden">
                 <Warehouse className="text-sky-600" size={28} />
-                <span className="text-xl font-black uppercase tracking-tight">Gudang Ballqish</span>
+                <span className="text-xl font-black uppercase tracking-tight">BALLQIS WAREHOUSE</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Akses Aman</p>
-              <h2 className="mt-2 text-3xl font-black text-slate-900">Masuk ke ruang kerja gudang</h2>
+              <h2 className="text-3xl font-black text-slate-900">Login Warehouse System</h2>
               <p className="mt-2 leading-7 text-slate-500">
                 Gunakan akun Anda untuk masuk ke Ballqish WMS.
               </p>

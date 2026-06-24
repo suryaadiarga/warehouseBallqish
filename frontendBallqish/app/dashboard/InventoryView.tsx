@@ -1,42 +1,62 @@
 import { useState } from 'react';
 import api from '@/lib/api';
 import { Plus, Trash2, Box, FolderTree } from 'lucide-react';
+import Link from 'next/link';
 
-export default function InventoryView({ products, categories, onRefresh, pagination, onPageChange, loadingProducts, productSearch, categoryFilter, onProductSearchChange, onCategoryFilterChange }: any) {
+type Category = {
+    id: number;
+    name: string;
+};
+
+type Product = {
+    id: number;
+    sku: string;
+    name: string;
+    stock: number;
+    category?: Category | null;
+};
+
+type Pagination = {
+    page: number;
+    lastPage: number;
+};
+
+type InventoryViewProps = {
+    products?: Product[];
+    categories?: Category[];
+    onRefresh: () => void;
+    pagination?: Pagination;
+    onPageChange?: (page: number) => void;
+    loadingProducts?: boolean;
+    productSearch?: string;
+    categoryFilter?: string;
+    onProductSearchChange?: (value: string) => void;
+    onCategoryFilterChange?: (value: string) => void;
+};
+
+const getErrorMessage = (err: unknown, fallback: string) => {
+    if (typeof err === 'object' && err !== null && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        return response?.data?.message ?? fallback;
+    }
+
+    return fallback;
+};
+
+export default function InventoryView({ products, categories, onRefresh, pagination, onPageChange, loadingProducts, productSearch, categoryFilter, onProductSearchChange, onCategoryFilterChange }: InventoryViewProps) {
     const [activeTab, setActiveTab] = useState('products'); // 'products' | 'categories'
     const [loading, setLoading] = useState(false);
-
-    // State Produk
-    const [showProductForm, setShowProductForm] = useState(false);
-    const [productForm, setProductForm] = useState({ name: '', sku: '', category_id: '', min_stock_level: 10, price: '' });
 
     // State Kategori
     const [showCatForm, setShowCatForm] = useState(false);
     const [catName, setCatName] = useState('');
-
-    // --- HANDLER PRODUK ---
-    const handleProductSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await api.post('/products', productForm);
-            setShowProductForm(false);
-            setProductForm({ name: '', sku: '', category_id: '', min_stock_level: 10, price: '' });
-            onRefresh();
-            alert("Produk berhasil ditambahkan!");
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Gagal menambahkan produk");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDeleteProduct = async (id: number, name: string) => {
         if (!confirm(`Yakin ingin menghapus produk ${name}?`)) return;
         try {
             await api.delete(`/products/${id}`);
             onRefresh();
-        } catch (err: any) {
+        } catch {
             alert("Gagal menghapus produk. Pastikan tidak ada histori mutasi terkait.");
         }
     };
@@ -51,8 +71,8 @@ export default function InventoryView({ products, categories, onRefresh, paginat
             setCatName('');
             onRefresh();
             alert("Kategori berhasil ditambahkan!");
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Gagal menambahkan kategori");
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, "Gagal menambahkan kategori"));
         } finally {
             setLoading(false);
         }
@@ -63,8 +83,8 @@ export default function InventoryView({ products, categories, onRefresh, paginat
         try {
             await api.delete(`/categories/${id}`);
             onRefresh();
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Gagal menghapus kategori! Pastikan tidak ada produk yang menggunakan kategori ini.");
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, "Gagal menghapus kategori! Pastikan tidak ada produk yang menggunakan kategori ini."));
         }
     };
 
@@ -93,12 +113,12 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                         <div>
                             <h2 className="text-xl font-black">Inventaris Gudang</h2>
                         </div>
-                        <button 
-                            onClick={() => setShowProductForm(!showProductForm)}
+                        <Link 
+                            href="/dashboard/operations?tab=movements"
                             className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all shadow-md"
                         >
-                            <Plus size={20} /> <span>{showProductForm ? 'Tutup Form' : 'Tambah Produk'}</span>
-                        </button>
+                            <Plus size={20} /> <span>Tambah Stok</span>
+                        </Link>
                     </div>
 
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3">
@@ -108,7 +128,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                             onChange={(e) => onCategoryFilterChange?.(e.target.value)}
                         >
                             <option value="">Semua Kategori</option>
-                            {categories?.map((c: any) => (
+                            {categories?.map((c) => (
                                 <option key={c.id} value={String(c.id)}>{c.name}</option>
                             ))}
                         </select>
@@ -120,39 +140,6 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                             onChange={(e) => onProductSearchChange?.(e.target.value)}
                         />
                     </div>
-
-                    {showProductForm && (
-                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                            <form onSubmit={handleProductSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Nama Produk</label>
-                                    <input type="text" required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} />
-                                </div>
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Kategori</label>
-                                    <select required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.category_id} onChange={e => setProductForm({...productForm, category_id: e.target.value})}>
-                                        <option value="">-- Pilih --</option>
-                                        {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">SKU</label>
-                                    <input type="text" required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.sku} onChange={e => setProductForm({...productForm, sku: e.target.value})} />
-                                </div>
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Harga</label>
-                                    <input type="number" required min="0" step="1" placeholder="Masukkan harga" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.price} onFocus={event => event.currentTarget.select()} onChange={e => setProductForm({...productForm, price: e.target.value.replace(/^0+(?=\d)/, '')})} />
-                                </div>
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Batas Kritis Stok</label>
-                                    <input type="number" required min="0" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" value={productForm.min_stock_level} onChange={e => setProductForm({...productForm, min_stock_level: parseInt(e.target.value)})} />
-                                </div>
-                                <button type="submit" disabled={loading} className="bg-emerald-500 hover:bg-emerald-600 text-white p-3 rounded-xl font-bold w-full h-[52px]">
-                                    {loading ? 'Menyimpan...' : 'Simpan Produk Baru'}
-                                </button>
-                            </form>
-                        </div>
-                    )}
 
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden text-black">
                         <table className="w-full text-left">
@@ -173,7 +160,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                                         </td>
                                     </tr>
                                 ) : (
-                                    products?.map((p: any) => (
+                                    products?.map((p) => (
                                         <tr key={p.id} className="hover:bg-slate-50">
                                             <td className="px-6 py-4 font-mono">
                                                 <span className="text-blue-600 font-bold block">{p.sku}</span>
@@ -266,7 +253,7 @@ export default function InventoryView({ products, categories, onRefresh, paginat
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-sm">
-                                {categories?.map((c: any) => (
+                                {categories?.map((c) => (
                                     <tr key={c.id} className="hover:bg-slate-50">
                                         <td className="px-6 py-4 text-center font-mono text-slate-400">{c.id}</td>
                                         <td className="px-6 py-4 font-bold">{c.name}</td>

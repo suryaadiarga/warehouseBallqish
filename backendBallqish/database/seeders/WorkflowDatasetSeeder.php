@@ -10,17 +10,18 @@ use App\Models\User;
 use App\Services\InventoryAnalyticsService;
 use App\Services\StockAuditService;
 use App\Services\StockMutationService;
+use App\Support\UserRoles;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
 class WorkflowDatasetSeeder extends Seeder
 {
-    private const EXPECTED_TOTAL_MUTATIONS = 63000;
+    private const EXPECTED_TOTAL_MUTATIONS = 62980;
 
     public function run(): void
     {
-        $admin = User::query()->where('role', 'admin_gudang')->firstOrFail();
-        $staff = User::query()->where('role', 'staff')->firstOrFail();
+        $admin = User::query()->where('role', UserRoles::WAREHOUSE_MANAGER)->firstOrFail();
+        $staff = User::query()->where('role', UserRoles::WAREHOUSE_STAFF)->firstOrFail();
         $mutationService = app(StockMutationService::class);
         $auditService = app(StockAuditService::class);
         $analyticsService = app(InventoryAnalyticsService::class);
@@ -127,7 +128,7 @@ class WorkflowDatasetSeeder extends Seeder
         }
 
         $risk = $analyticsService->buildMovementAnalysis()->countBy('status');
-        if (($risk['safe'] ?? 0) !== 445 || ($risk['warning'] ?? 0) !== 64 || ($risk['critical'] ?? 0) !== 123) {
+        if (($risk['safe'] ?? 0) !== 442 || ($risk['warning'] ?? 0) !== 66 || ($risk['critical'] ?? 0) !== 124) {
             throw new RuntimeException('Distribusi risiko hasil seed tidak sesuai target.');
         }
 

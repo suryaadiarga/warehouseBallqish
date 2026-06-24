@@ -6,9 +6,12 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/main_navigation/screens/main_navigation_screen.dart';
 import 'core/storage/token_storage.dart';
 import 'features/auth/data/auth_service.dart';
+import 'features/notifications/data/push_notification_service.dart';
 
 class BallqishApp extends StatelessWidget {
   const BallqishApp({super.key});
+
+  static final navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +21,7 @@ class BallqishApp extends StatelessWidget {
         systemNavigationBarColor: AppColors.slate50,
       ),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Ballqish WMS',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
@@ -55,6 +59,7 @@ class _SessionGateState extends State<SessionGate> {
 
     try {
       await _authService.me();
+      await PushNotificationService().syncDeviceToken();
       _authenticated = true;
     } catch (_) {
       await _storage.clear();

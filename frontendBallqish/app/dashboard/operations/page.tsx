@@ -4,21 +4,22 @@ import { StockTransfersPage } from '@/components/modules/operations/StockTransfe
 import { ModuleTabs } from '@/components/ui/ModuleTabs';
 
 const tabs = [
-  { id: 'mutations', label: 'Mutasi', description: 'Barang masuk & keluar' },
-  { id: 'transfers', label: 'Transfer', description: 'Antar-rak dan gudang' },
-  { id: 'history', label: 'Riwayat & Ekspor', description: 'Audit transaksi' },
+  { id: 'movements', label: 'Inbound & Outbound' },
+  { id: 'transfers', label: 'Transfer' },
+  { id: 'mutations', label: 'Mutasi' },
+  { id: 'history', label: 'Riwayat & Ekspor' },
 ];
 
 export default async function OperationsWorkspace({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const requestedTab = (await searchParams).tab ?? 'mutations';
-  const activeTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : 'mutations';
+  const requestedTab = (await searchParams).tab ?? 'movements';
+  const activeTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : 'movements';
 
   return (
     <div className="space-y-6">
       <ModuleTabs basePath="/dashboard/operations" activeTab={activeTab} tabs={tabs} />
       {activeTab === 'transfers' ? (
         <StockTransfersPage />
-      ) : activeTab === 'history' ? (
+      ) : activeTab === 'history' || activeTab === 'mutations' ? (
         <MutationReportsPage />
       ) : (
         <MutationsPage />

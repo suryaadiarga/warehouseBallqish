@@ -3,7 +3,6 @@ import { LucideIcon } from 'lucide-react';
 export function MetricCard({
   label,
   value,
-  description,
   icon: Icon,
   tone = 'sky',
 }: {
@@ -30,7 +29,6 @@ export function MetricCard({
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
           <p className="mt-3 text-3xl font-black text-slate-950">{value}</p>
-          {description ? <p className="mt-2 text-sm text-slate-500">{description}</p> : null}
         </div>
         <div className={`rounded-2xl p-3 ${toneClass}`}>
           <Icon size={20} />

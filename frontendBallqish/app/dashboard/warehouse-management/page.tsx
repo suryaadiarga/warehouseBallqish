@@ -3,8 +3,8 @@ import { WarehouseManagement } from '@/components/modules/master/WarehouseManage
 import { ModuleTabs } from '@/components/ui/ModuleTabs';
 
 const tabs = [
-  { id: 'warehouses', label: 'Gudang', description: 'Lokasi operasional' },
-  { id: 'racks', label: 'Rak & Lokasi', description: 'Zona penyimpanan' },
+  { id: 'warehouses', label: 'Gudang' },
+  { id: 'racks', label: 'Rak & Lokasi' },
 ];
 
 export default async function WarehouseWorkspace({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {

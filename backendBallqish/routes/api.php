@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\ProductAnalyticsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductStockController;
@@ -65,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stock-alerts', [StockAlertController::class, 'index']);
 
     // Transactions
+    Route::post('/inventory-movements', [StockMutationController::class, 'storeInventoryMovement']);
     Route::post('/mutations', [StockMutationController::class, 'store']);
     Route::put('/mutations/{id}/approve', [StockMutationController::class, 'approve']);
     Route::delete('/mutations/{id}/reject', [StockMutationController::class, 'reject']);
@@ -86,4 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [AuthController::class, 'notifications']);
     Route::put('/notifications/{notificationId}/read', [AuthController::class, 'readNotification']);
     Route::put('/notifications/read-all', [AuthController::class, 'readAllNotifications']);
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 });

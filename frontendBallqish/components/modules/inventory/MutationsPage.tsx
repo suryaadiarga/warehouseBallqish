@@ -1,27 +1,24 @@
 'use client';
 
-import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { InventoryMovementBadge } from '@/components/ui/InventoryMovementBadge';
+import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/QueryState';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import api, { ApiEnvelope, extractApiErrorMessage } from '@/lib/api';
-import { hasInventoryAdminAccess } from '@/lib/auth';
 import { formatDateTimeId } from '@/lib/format';
-import { CheckCircle2, Plus, XCircle } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, PackageCheck, Plus, Truck, Warehouse } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type ProductOption = { id: number; name: string; sku: string; stock: number };
+type SupplierOption = { id: number; name: string };
+type ProductOption = { id: number; supplier_id?: number | null; name: string; sku: string; stock: number; supplier?: SupplierOption | null };
 type WarehouseOption = { id: number; name: string };
-type WarehouseLocationOption = { id: number; warehouse_id: number; code: string; name: string };
+type WarehouseLocationResult = { id: number; code: string; name: string };
 
 type MutationItem = {
   id: number;
-  product_id: number;
-  warehouse_id?: number | null;
-  warehouse_location_id?: number | null;
   quantity: number;
   type: 'in' | 'out';
   status: 'draft' | 'approved';
@@ -30,63 +27,79 @@ type MutationItem = {
   mutation_source?: string | null;
   reference_number?: string | null;
   created_at: string;
-  product?: { id: number; name: string; sku: string };
-  warehouse?: { id: number; name: string };
-  warehouseLocation?: { id: number; code: string; name: string } | null;
+  product?: { id: number; name: string; sku: string; supplier?: SupplierOption | null };
+  warehouse?: { id: number; name: string } | null;
+  warehouse_location?: WarehouseLocationResult | null;
+  warehouseLocation?: WarehouseLocationResult | null;
+  from_warehouse?: { id: number; name: string } | null;
+  to_warehouse?: { id: number; name: string } | null;
   user?: { id: number; name: string } | null;
   approver?: { id: number; name: string } | null;
 };
 
+type MovementResult = MutationItem & {
+  before_qty?: number | null;
+  after_qty?: number | null;
+};
+
+const isMainWarehouse = (warehouse: WarehouseOption) => /pusat|utama|main/i.test(warehouse.name);
+
 export function MutationsPage() {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const [mutations, setMutations] = useState<MutationItem[]>([]);
   const [products, setProducts] = useState<ProductOption[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
-  const [locations, setLocations] = useState<WarehouseLocationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [dialog, setDialog] = useState<{ mode: 'approve' | 'reject'; item: MutationItem } | null>(null);
-  const [dialogLoading, setDialogLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [result, setResult] = useState<MovementResult | null>(null);
   const [form, setForm] = useState({
+    type: 'in' as 'in' | 'out',
+    supplier_id: '',
     product_id: '',
     warehouse_id: '',
-    warehouse_location_id: '',
-    type: 'in' as 'in' | 'out',
+    destination_type: 'customer' as 'customer' | 'transit',
+    to_warehouse_id: '',
     quantity: 1,
     note: '',
   });
 
-  const isApprover = hasInventoryAdminAccess(user?.role);
+  const mainWarehouse = useMemo(
+    () => warehouses.find(isMainWarehouse) ?? warehouses[0],
+    [warehouses]
+  );
 
-  const filteredLocations = useMemo(() => {
-    if (!form.warehouse_id) {
-      return locations;
+  const filteredProducts = useMemo(() => {
+    if (form.type !== 'in' || !form.supplier_id) {
+      return products;
     }
 
-    return locations.filter((item) => String(item.warehouse_id) === form.warehouse_id);
-  }, [form.warehouse_id, locations]);
+    return products.filter((product) => String(product.supplier_id ?? product.supplier?.id ?? '') === form.supplier_id);
+  }, [form.supplier_id, form.type, products]);
+
+  const selectedProduct = products.find((product) => String(product.id) === form.product_id);
+  const selectedSupplier = suppliers.find((supplier) => String(supplier.id) === form.supplier_id);
 
   const loadData = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const [mutationRes, productRes, warehouseRes, locationRes] = await Promise.all([
+      const [mutationRes, productRes, supplierRes, warehouseRes] = await Promise.all([
         api.get<ApiEnvelope<MutationItem[]>>('/reports/mutations'),
         api.get<ApiEnvelope<ProductOption[]>>('/products', { params: { per_page: 1000 } }),
+        api.get<ApiEnvelope<SupplierOption[]>>('/suppliers'),
         api.get<ApiEnvelope<WarehouseOption[]>>('/warehouses'),
-        api.get<ApiEnvelope<WarehouseLocationOption[]>>('/warehouse-locations'),
       ]);
 
       setMutations(mutationRes.data.data);
       setProducts(productRes.data.data);
+      setSuppliers(supplierRes.data.data);
       setWarehouses(warehouseRes.data.data);
-      setLocations(locationRes.data.data);
     } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, 'Gagal memuat data mutasi stok.'));
+      setError(extractApiErrorMessage(err, 'Gagal memuat data inbound & outbound.'));
     } finally {
       setLoading(false);
     }
@@ -96,176 +109,288 @@ export function MutationsPage() {
     void loadData();
   }, []);
 
-  const submitMutation = async (event: React.FormEvent) => {
-    event.preventDefault();
+  useEffect(() => {
+    if (!form.warehouse_id && mainWarehouse) {
+      setForm((current) => ({ ...current, warehouse_id: String(mainWarehouse.id) }));
+    }
+  }, [form.warehouse_id, mainWarehouse]);
+
+  const setMovementType = (type: 'in' | 'out') => {
+    setForm((current) => ({
+      ...current,
+      type,
+      product_id: '',
+      supplier_id: type === 'in' ? current.supplier_id : '',
+      destination_type: type === 'out' ? current.destination_type : 'customer',
+      to_warehouse_id: '',
+      note: '',
+    }));
+    setResult(null);
+  };
+
+  const validateBeforeConfirm = () => {
+    if (!form.product_id) {
+      showToast({ type: 'error', title: 'Produk wajib dipilih', description: 'Pilih produk yang akan diproses.' });
+      return false;
+    }
+
+    if (form.type === 'in' && !form.supplier_id) {
+      showToast({ type: 'error', title: 'Supplier wajib dipilih', description: 'Barang masuk harus dicatat dari supplier yang sesuai.' });
+      return false;
+    }
+
+    if (form.type === 'out' && form.destination_type === 'transit' && !form.to_warehouse_id) {
+      showToast({ type: 'error', title: 'Gudang transit wajib dipilih', description: 'Pilih gudang tujuan transit.' });
+      return false;
+    }
+
+    if (form.quantity < 1) {
+      showToast({ type: 'error', title: 'Jumlah tidak valid', description: 'Jumlah minimal 1.' });
+      return false;
+    }
+
+    return true;
+  };
+
+  const submitMovement = async () => {
     setSubmitting(true);
 
     try {
-      const response = await api.post<ApiEnvelope<MutationItem>>('/mutations', {
+      const response = await api.post<ApiEnvelope<MovementResult>>('/inventory-movements', {
+        type: form.type,
+        supplier_id: form.type === 'in' ? Number(form.supplier_id) : undefined,
         product_id: Number(form.product_id),
         warehouse_id: form.warehouse_id ? Number(form.warehouse_id) : undefined,
-        warehouse_location_id: form.warehouse_location_id ? Number(form.warehouse_location_id) : undefined,
-        type: form.type,
-        quantity: form.quantity,
-        note: form.note || undefined,
+        destination_type: form.type === 'out' ? form.destination_type : undefined,
+        to_warehouse_id: form.type === 'out' && form.destination_type === 'transit' ? Number(form.to_warehouse_id) : undefined,
+        quantity: Number(form.quantity),
+        note: form.note.trim() || undefined,
       });
 
-      showToast({
-        type: 'success',
-        title: 'Draft mutasi dibuat',
-        description: response.data.message,
-      });
-      setForm({
+      setResult(response.data.data);
+      setConfirmOpen(false);
+      setForm((current) => ({
+        ...current,
+        supplier_id: current.type === 'in' ? current.supplier_id : '',
         product_id: '',
-        warehouse_id: '',
-        warehouse_location_id: '',
-        type: 'in',
+        destination_type: 'customer',
+        to_warehouse_id: '',
         quantity: 1,
         note: '',
-      });
-      setShowForm(false);
+      }));
       await loadData();
+      showToast({ type: 'success', title: 'Transaksi stok berhasil', description: response.data.message });
     } catch (err: unknown) {
       showToast({
         type: 'error',
-        title: 'Mutasi gagal dibuat',
-        description: extractApiErrorMessage(err, 'Periksa data produk, gudang, dan quantity.'),
+        title: 'Transaksi stok gagal',
+        description: extractApiErrorMessage(err, 'Periksa supplier, produk, jumlah, dan stok tersedia.'),
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const runDialogAction = async () => {
-    if (!dialog) {
-      return;
-    }
-
-    setDialogLoading(true);
-
-    try {
-      if (dialog.mode === 'approve') {
-        const response = await api.put<ApiEnvelope<MutationItem>>(`/mutations/${dialog.item.id}/approve`);
-        showToast({
-          type: 'success',
-          title: 'Mutasi disetujui',
-          description: response.data.message,
-        });
-      } else {
-        const response = await api.delete<ApiEnvelope<null>>(`/mutations/${dialog.item.id}/reject`);
-        showToast({
-          type: 'success',
-          title: 'Draft mutasi ditolak',
-          description: response.data.message,
-        });
-      }
-
-      setDialog(null);
-      await loadData();
-    } catch (err: unknown) {
-      showToast({
-        type: 'error',
-        title: dialog.mode === 'approve' ? 'Persetujuan gagal' : 'Penolakan gagal',
-        description: extractApiErrorMessage(err, 'Backend menolak aksi mutasi ini.'),
-      });
-    } finally {
-      setDialogLoading(false);
-    }
-  };
-
   if (loading) {
-    return <LoadingState title="Memuat mutasi stok" description="Mohon tunggu sebentar." />;
+    return <LoadingState title="Memuat inbound & outbound" description="Mengambil supplier, produk, gudang, dan riwayat mutasi." />;
   }
 
   if (error) {
-    return <ErrorState title="Mutasi gagal dimuat" description={error} />;
+    return <ErrorState title="Inbound & outbound gagal dimuat" description={error} />;
   }
+
+  const resultLocation = result?.warehouse_location ?? result?.warehouseLocation ?? null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Alur Inventaris"
-        title="Mutasi Stok"
-        action={
-          <button
-            type="button"
-            onClick={() => setShowForm((value) => !value)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700"
-          >
-            <Plus size={18} />
-            <span>{showForm ? 'Tutup Form' : 'Input Mutasi'}</span>
-          </button>
-        }
+        title="Inbound & Outbound"
+        description="Catat stok masuk dari supplier dan stok keluar ke customer atau gudang transit. Rak dipilih otomatis dari kapasitas dan kategori yang sesuai."
       />
 
-      {showForm ? (
+      <div className="grid gap-5 xl:grid-cols-3">
+        <MetricCard label="Supplier" value={suppliers.length} icon={Truck} description="Sumber barang masuk." />
+        <MetricCard label="Produk" value={products.length} icon={PackageCheck} tone="sky" description="Produk yang tersedia di master." />
+        <MetricCard label="Gudang Utama" value={mainWarehouse?.name ?? '-'} icon={Warehouse} tone="emerald" />
+      </div>
+
+      <section className="surface-card rounded-[28px] p-6">
+        <div className="mb-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setMovementType('in')}
+            className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black transition ${form.type === 'in' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            <ArrowDownToLine size={18} />
+            <span>Inbound</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMovementType('out')}
+            className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black transition ${form.type === 'out' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            <ArrowUpFromLine size={18} />
+            <span>Outbound</span>
+          </button>
+        </div>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (validateBeforeConfirm()) {
+              setConfirmOpen(true);
+            }
+          }}
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        >
+          {form.type === 'in' ? (
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Supplier</label>
+              <select
+                value={form.supplier_id}
+                onChange={(event) => setForm((current) => ({ ...current, supplier_id: event.target.value, product_id: '' }))}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+                required
+              >
+                <option value="">Pilih supplier</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Produk</label>
+            <select
+              value={form.product_id}
+              onChange={(event) => setForm((current) => ({ ...current, product_id: event.target.value }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+              required
+            >
+              <option value="">{form.type === 'in' && !form.supplier_id ? 'Pilih supplier dulu' : 'Pilih produk'}</option>
+              {filteredProducts.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} ({product.sku})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">{form.type === 'in' ? 'Masuk ke Gudang' : 'Keluar dari Gudang'}</label>
+            <select
+              value={form.warehouse_id}
+              onChange={(event) => setForm((current) => ({ ...current, warehouse_id: event.target.value }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+            >
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {form.type === 'out' ? (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Tujuan Keluar</label>
+                <select
+                  value={form.destination_type}
+                  onChange={(event) => setForm((current) => ({ ...current, destination_type: event.target.value as 'customer' | 'transit', to_warehouse_id: '' }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="transit">Gudang Transit</option>
+                </select>
+              </div>
+              {form.destination_type === 'transit' ? (
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Gudang Transit</label>
+                  <select
+                    value={form.to_warehouse_id}
+                    onChange={(event) => setForm((current) => ({ ...current, to_warehouse_id: event.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+                    required
+                  >
+                    <option value="">Pilih gudang transit</option>
+                    {warehouses
+                      .filter((warehouse) => String(warehouse.id) !== form.warehouse_id)
+                      .map((warehouse) => (
+                        <option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Jumlah</label>
+            <input
+              type="number"
+              min={1}
+              value={form.quantity}
+              onChange={(event) => setForm((current) => ({ ...current, quantity: Number(event.target.value) }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-2 xl:col-span-3">
+            <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
+            <textarea
+              value={form.note}
+              onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+              className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder={form.type === 'in' ? 'Contoh: Surat jalan supplier, nomor PO, atau kondisi barang.' : 'Contoh: Nomor pembelian customer atau alasan keluar.'}
+            />
+          </div>
+
+          <div className="md:col-span-2 xl:col-span-3">
+            <button type="submit" disabled={submitting} className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700 disabled:opacity-50">
+              <Plus size={18} />
+              <span>{submitting ? 'Memproses...' : form.type === 'in' ? 'Catat Inbound' : 'Catat Outbound'}</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {result ? (
         <section className="surface-card rounded-[28px] p-6">
-          <form onSubmit={submitMutation} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Produk</label>
-              <select value={form.product_id} onChange={(e) => setForm((current) => ({ ...current, product_id: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required>
-                <option value="">Pilih produk</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} ({product.sku})
-                  </option>
-                ))}
-              </select>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Transaksi Terakhir</p>
+              <h3 className="mt-2 text-xl font-black text-slate-950">{result.product?.name ?? selectedProduct?.name ?? 'Produk'}</h3>
+              <p className="mt-1 font-mono text-sm text-slate-500">{result.reference_number ?? '-'}</p>
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Gudang</label>
-              <select value={form.warehouse_id} onChange={(e) => setForm((current) => ({ ...current, warehouse_id: e.target.value, warehouse_location_id: '' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-                <option value="">Tanpa gudang spesifik</option>
-                {warehouses.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex gap-2">
+              <InventoryMovementBadge type={result.type} />
+              <InventoryMovementBadge source={result.mutation_source} />
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Lokasi Gudang</label>
-              <select value={form.warehouse_location_id} onChange={(e) => setForm((current) => ({ ...current, warehouse_location_id: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-                <option value="">Pilih rak otomatis</option>
-                {filteredLocations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.code} - {location.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Tipe Mutasi</label>
-              <select value={form.type} onChange={(e) => setForm((current) => ({ ...current, type: e.target.value as 'in' | 'out' }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500">
-                <option value="in">Masuk (IN)</option>
-                <option value="out">Keluar (OUT)</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Jumlah</label>
-              <input type="number" min={1} value={form.quantity} onChange={(e) => setForm((current) => ({ ...current, quantity: Number(e.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" required />
-            </div>
-            <div className="xl:col-span-3">
-              <label className="mb-2 block text-sm font-bold text-slate-700">Catatan</label>
-              <textarea value={form.note} onChange={(e) => setForm((current) => ({ ...current, note: e.target.value }))} className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Tambahkan catatan bila diperlukan" />
-            </div>
-            <div className="md:col-span-2 xl:col-span-3">
-              <button type="submit" disabled={submitting} className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
-                {submitting ? 'Menyimpan...' : 'Simpan Draft Mutasi'}
-              </button>
-            </div>
-          </form>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <MetricCard label="Jumlah" value={result.quantity} icon={PackageCheck} tone={result.type === 'in' ? 'emerald' : 'rose'} />
+            <MetricCard label="Gudang" value={result.warehouse?.name ?? '-'} icon={Warehouse} tone="sky" />
+            <MetricCard label="Rak Otomatis" value={resultLocation ? `${resultLocation.code} - ${resultLocation.name}` : '-'} icon={Warehouse} tone="slate" />
+          </div>
         </section>
       ) : null}
 
-      <section className="surface-card rounded-[28px] overflow-hidden">
+      <section className="surface-card overflow-hidden rounded-[28px]">
         <div className="border-b border-slate-100 px-6 py-5">
-          <h3 className="text-lg font-black text-slate-900">Daftar Mutasi</h3>
+          <h3 className="text-lg font-black text-slate-900">Mutasi Terbaru</h3>
         </div>
 
         {mutations.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada mutasi" description="Buat draf mutasi pertama untuk mencatat pergerakan stok." />
+            <EmptyState title="Belum ada mutasi" description="Belum ada transaksi stok yang tercatat." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -276,63 +401,40 @@ export function MutationsPage() {
                   <th className="px-6 py-4">Produk</th>
                   <th className="px-6 py-4">Pergerakan</th>
                   <th className="px-6 py-4">Jumlah</th>
+                  <th className="px-6 py-4">Lokasi</th>
                   <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {mutations.map((mutation) => (
-                  <tr key={mutation.id} className="hover:bg-slate-50/80">
-                    <td className="px-6 py-4 text-slate-600">{formatDateTimeId(mutation.created_at)}</td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900">{mutation.product?.name ?? `Produk #${mutation.product_id}`}</p>
-                      <p className="mt-1 text-xs text-slate-500">{mutation.reference_number || 'Tanpa reference'}</p>
-                      {mutation.note && !mutation.note.startsWith('Synthetic profile:') ? (
-                        <p className="mt-1 text-xs text-slate-400">{mutation.note}</p>
-                      ) : mutation.reason ? (
-                        <p className="mt-1 text-xs text-slate-400">{mutation.reason}</p>
-                      ) : null}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <InventoryMovementBadge type={mutation.type} />
-                        <InventoryMovementBadge source={mutation.mutation_source} />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-black text-slate-900">{mutation.quantity}</td>
-                    <td className="px-6 py-4">
-                      {mutation.status === 'approved' ? <StatusBadge label="approved" tone="safe" /> : <StatusBadge label="draft" tone="warning" />}
-                      <div className="mt-2 text-xs text-slate-500">
-                        <p>Oleh: {mutation.user?.name ?? '-'}</p>
-                        <p>Penyetuju: {mutation.approver?.name ?? '-'}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {mutation.status === 'draft' && isApprover ? (
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDialog({ mode: 'approve', item: mutation })}
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                          >
-                            <CheckCircle2 size={16} />
-                            <span>Setujui</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDialog({ mode: 'reject', item: mutation })}
-                            className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 font-semibold text-rose-700 transition hover:bg-rose-100"
-                          >
-                            <XCircle size={16} />
-                            <span>Tolak</span>
-                          </button>
+                {mutations.map((mutation) => {
+                  const location = mutation.warehouse_location ?? mutation.warehouseLocation ?? null;
+
+                  return (
+                    <tr key={mutation.id} className="hover:bg-slate-50/80">
+                      <td className="px-6 py-4 text-slate-600">{formatDateTimeId(mutation.created_at)}</td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900">{mutation.product?.name ?? '-'}</p>
+                        <p className="mt-1 text-xs text-slate-500">{mutation.reference_number || mutation.product?.sku || '-'}</p>
+                        {mutation.reason ? <p className="mt-1 text-xs text-slate-400">{mutation.reason}</p> : null}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <InventoryMovementBadge type={mutation.type} />
+                          <InventoryMovementBadge source={mutation.mutation_source} />
                         </div>
-                      ) : (
-                        <span className="text-slate-400">{mutation.status === 'approved' ? 'Selesai' : 'Menunggu admin'}</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 font-black text-slate-900">{mutation.quantity}</td>
+                      <td className="px-6 py-4 text-slate-600">
+                        <p className="font-semibold">{mutation.warehouse?.name ?? '-'}</p>
+                        <p className="mt-1 text-xs text-slate-500">{location ? `${location.code} - ${location.name}` : '-'}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        {mutation.status === 'approved' ? <StatusBadge label="approved" tone="safe" /> : <StatusBadge label="draft" tone="warning" />}
+                        <p className="mt-2 text-xs text-slate-500">Oleh: {mutation.user?.name ?? '-'}</p>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -340,18 +442,17 @@ export function MutationsPage() {
       </section>
 
       <ConfirmDialog
-        open={Boolean(dialog)}
-        title={dialog?.mode === 'approve' ? 'Setujui mutasi ini?' : 'Tolak draf mutasi ini?'}
+        open={confirmOpen}
+        title={form.type === 'in' ? 'Catat barang masuk?' : 'Catat barang keluar?'}
         description={
-          dialog?.mode === 'approve'
-            ? 'Stok akan diperbarui sesuai gudang dan lokasi yang dipilih.'
-            : 'Draf mutasi akan dihapus.'
+          form.type === 'in'
+            ? `Stok ${selectedProduct?.name ?? 'produk'} dari ${selectedSupplier?.name ?? 'supplier'} akan masuk ke gudang utama dan rak dipilih otomatis.`
+            : `Stok ${selectedProduct?.name ?? 'produk'} akan dikurangi dari gudang asal dan rak dipilih otomatis.`
         }
-        confirmLabel={dialog?.mode === 'approve' ? 'Setujui Sekarang' : 'Tolak Draf'}
-        tone={dialog?.mode === 'approve' ? 'primary' : 'danger'}
-        loading={dialogLoading}
-        onCancel={() => setDialog(null)}
-        onConfirm={() => void runDialogAction()}
+        confirmLabel={form.type === 'in' ? 'Ya, Catat Masuk' : 'Ya, Catat Keluar'}
+        loading={submitting}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => void submitMovement()}
       />
     </div>
   );

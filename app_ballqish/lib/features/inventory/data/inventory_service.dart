@@ -16,6 +16,9 @@ class InventoryService {
   Future<void> createMutation(Map<String, dynamic> body) =>
       _api.post('/mutations', body: body);
 
+  Future<void> createInventoryMovement(Map<String, dynamic> body) =>
+      _api.post('/inventory-movements', body: body);
+
   Future<void> approveMutation(int id) => _api.put('/mutations/$id/approve');
 
   Future<void> createTransfer(Map<String, dynamic> body) =>

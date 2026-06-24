@@ -5,6 +5,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/query_views.dart';
 import '../../../core/widgets/product_image.dart';
+import '../../inventory/screens/inventory_screen.dart';
 import '../../shared/crud_services.dart';
 import '../data/product_model.dart';
 
@@ -24,24 +25,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void _reload() =>
       setState(() => _future = _service.all(search: _search.text.trim()));
 
-  Future<void> _showForm({Product? product}) async {
+  Future<void> _showForm(Product product) async {
     final categories = await _categoryService.all();
     if (!mounted) return;
-    final sku = TextEditingController(text: product?.sku ?? '');
-    final barcode = TextEditingController(text: product?.barcode ?? '');
-    final name = TextEditingController(text: product?.name ?? '');
+    final sku = TextEditingController(text: product.sku);
+    final barcode = TextEditingController(text: product.barcode ?? '');
+    final name = TextEditingController(text: product.name);
     final minStock = TextEditingController(
-      text: (product?.minStockLevel ?? 10).toString(),
+      text: product.minStockLevel.toString(),
     );
-    final price = TextEditingController(text: (product?.price ?? 0).toString());
-    int? categoryId =
-        product?.categoryId ??
-        (categories.isEmpty ? null : categories.first.id);
+    final price = TextEditingController(text: product.price.toString());
+    int? categoryId = product.categoryId;
     final save = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(product == null ? 'Tambah Produk' : 'Edit Produk'),
+          title: const Text('Edit Produk'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -99,7 +98,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(product == null ? 'Tambah' : 'Simpan Perubahan'),
+              child: const Text('Simpan Perubahan'),
             ),
           ],
         ),
@@ -119,21 +118,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
         'min_stock_level': Validators.parseInt(minStock.text),
         'price': double.tryParse(price.text.trim()) ?? 0,
       };
-      if (product == null) {
-        await _service.create(body);
-      } else {
-        await _service.update(product.id, body);
-      }
+      await _service.update(product.id, body);
       _reload();
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              product == null
-                  ? 'Produk berhasil ditambahkan'
-                  : 'Produk berhasil diperbarui',
-            ),
-          ),
+          const SnackBar(content: Text('Produk berhasil diperbarui')),
         );
     } on ApiException catch (error) {
       if (mounted)
@@ -204,10 +193,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       final product = products[index];
                       return Card(
                         child: ListTile(
-                          leading: ProductImage(
-                            imageUrl: product.imageUrl,
-                            showIllustrationLabel: product.imageIsIllustration,
-                          ),
+                          leading: ProductImage(imageUrl: product.imageUrl),
                           title: Text(product.name),
                           subtitle: Text(
                             '${product.sku} - ${product.category?.name ?? 'Tanpa kategori'}',
@@ -228,7 +214,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ),
                               ),
                               IconButton(
-                                onPressed: () => _showForm(product: product),
+                                onPressed: () => _showForm(product),
                                 icon: const Icon(Icons.edit_outlined),
                               ),
                               IconButton(
@@ -247,9 +233,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showForm,
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const InventoryScreen()));
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Stok'),
       ),
     );
   }

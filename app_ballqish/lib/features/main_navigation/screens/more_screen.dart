@@ -30,16 +30,6 @@ class MoreScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MANAJEMEN DATA',
-                style: TextStyle(
-                  color: AppColors.sky600,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.8,
-                ),
-              ),
-              SizedBox(height: 6),
-              Text(
                 'Menu lainnya',
                 style: TextStyle(
                   color: AppColors.slate900,

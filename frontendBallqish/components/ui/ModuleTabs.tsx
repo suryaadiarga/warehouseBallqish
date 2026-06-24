@@ -3,7 +3,7 @@ import Link from 'next/link';
 type ModuleTab = {
   id: string;
   label: string;
-  description: string;
+  description?: string;
 };
 
 export function ModuleTabs({ basePath, activeTab, tabs }: { basePath: string; activeTab: string; tabs: ModuleTab[] }) {
@@ -22,7 +22,6 @@ export function ModuleTabs({ basePath, activeTab, tabs }: { basePath: string; ac
               }`}
             >
               <span className="block text-sm font-black">{tab.label}</span>
-              <span className={`mt-1 block text-xs ${active ? 'text-slate-300' : 'text-slate-400'}`}>{tab.description}</span>
             </Link>
           );
         })}

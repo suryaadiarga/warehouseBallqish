@@ -173,14 +173,13 @@ export function ProductManagement() {
         eyebrow="Data Master"
         title="Produk"
         action={
-          <button
-            type="button"
-            onClick={() => setShowForm((value) => !value)}
+          <Link
+            href="/dashboard/operations?tab=movements"
             className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700"
           >
             <Plus size={18} />
-            <span>{showForm ? 'Tutup Form' : 'Tambah Produk'}</span>
-          </button>
+            <span>Tambah Stok</span>
+          </Link>
         }
       />
 
@@ -267,7 +266,7 @@ export function ProductManagement() {
 
         {products.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada produk" description="Tambahkan produk baru atau ubah kata kunci pencarian Anda." />
+            <EmptyState title="Belum ada produk" description="Ubah kata kunci pencarian Anda atau gunakan menu stok setelah master produk tersedia." />
           </div>
         ) : (
           <>
@@ -288,7 +287,7 @@ export function ProductManagement() {
                     <tr key={product.id} className="hover:bg-slate-50/80">
                       <td className="px-6 py-4">
                         <div className="flex min-w-[280px] items-center gap-3">
-                          <ProductImage src={product.image_url} alt={product.name} showIllustrationLabel className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200" />
+                          <ProductImage src={product.image_url} alt={product.name} className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200" />
                           <div>
                             <p className="font-bold text-slate-900">{product.name}</p>
                             <p className="mt-1 font-mono text-xs text-slate-500">{product.sku}</p>

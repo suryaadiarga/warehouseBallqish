@@ -9,7 +9,15 @@ class ReportController extends Controller
 {
     public function mutationHistory(Request $request)
     {
-        $query = StockMutation::with(['product', 'user', 'approver']);
+        $query = StockMutation::with([
+            'product.supplier',
+            'warehouse',
+            'warehouseLocation',
+            'fromWarehouse',
+            'toWarehouse',
+            'user',
+            'approver',
+        ]);
 
         // filter berdasarkan tanggal
         if ($request->has('start_date') && $request->has('end_date')) {

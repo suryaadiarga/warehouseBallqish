@@ -7,14 +7,74 @@ use App\Models\ProductStock;
 use App\Models\StockMutation;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Models\WarehouseLocation;
 use App\Notifications\StockTransferStatusChanged;
+use App\Support\UserRoles;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StockMutationService
 {
+    public function createOperationalMovement(array $data, int $userId, string $userRole): StockMutation
+    {
+        $this->assertRole($userRole, [
+            UserRoles::WAREHOUSE_MANAGER,
+            UserRoles::WAREHOUSE_STAFF,
+            UserRoles::INVENTORY_CONTROLLER,
+        ], 'Hanya Warehouse Manager, Warehouse Staff, atau Inventory Controller yang dapat mencatat keluar masuk barang.');
+
+        return DB::transaction(function () use ($data, $userId) {
+            $product = Product::query()->with('supplier:id,name')->lockForUpdate()->findOrFail($data['product_id']);
+            $type = $data['type'];
+            $warehouseId = (int) ($data['warehouse_id'] ?? $this->selectPrimaryWarehouseId());
+            $locationId = $data['warehouse_location_id'] ?? $this->selectAutomaticLocation(
+                $product->id,
+                $warehouseId,
+                $type,
+                (int) $data['quantity']
+            );
+
+            $isInbound = $type === 'in';
+            $destinationType = $data['destination_type'] ?? null;
+            $toWarehouseId = $destinationType === 'transit' ? (int) $data['to_warehouse_id'] : null;
+            $supplierName = $product->supplier?->name ?? 'supplier';
+
+            $mutation = StockMutation::create([
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouseId,
+                'warehouse_location_id' => $locationId,
+                'from_warehouse_id' => $isInbound ? null : $warehouseId,
+                'to_warehouse_id' => $isInbound ? $warehouseId : $toWarehouseId,
+                'user_id' => $userId,
+                'approved_by' => $userId,
+                'reference_number' => $this->generateReferenceNumber($isInbound ? 'INB' : 'OUT'),
+                'mutation_source' => $isInbound ? 'supplier_receipt' : ($destinationType === 'transit' ? 'transit_dispatch' : 'customer_dispatch'),
+                'type' => $type,
+                'quantity' => (int) $data['quantity'],
+                'status' => 'draft',
+                'note' => $data['note'] ?? null,
+                'reason' => $isInbound
+                    ? "Barang masuk dari {$supplierName}"
+                    : ($destinationType === 'transit' ? 'Barang keluar ke gudang transit' : 'Barang keluar ke customer'),
+            ]);
+
+            $this->applyApprovedMutation($mutation, $userId);
+
+            return $mutation->fresh([
+                'product:id,name,sku,image_key,supplier_id',
+                'product.supplier:id,name',
+                'warehouse:id,name',
+                'warehouseLocation:id,warehouse_id,code,name',
+                'fromWarehouse:id,name',
+                'toWarehouse:id,name',
+                'user:id,name',
+                'approver:id,name',
+            ]);
+        });
+    }
+
     public function createApprovedSystemMutation(array $data, int $userId): StockMutation
     {
         $mutation = StockMutation::create([
@@ -60,7 +120,7 @@ class StockMutationService
 
     public function approveMutation(int $id, string $userRole, ?int $approvedBy = null)
     {
-        $this->assertPrivilegedRole($userRole);
+        $this->assertRole($userRole, UserRoles::MUTATION_APPROVERS, 'Hanya Warehouse Manager atau Inventory Controller yang dapat menyetujui mutasi.');
 
         return DB::transaction(function () use ($id, $approvedBy) {
             $mutation = StockMutation::with(['product', 'warehouse', 'warehouseLocation'])->lockForUpdate()->findOrFail($id);
@@ -85,7 +145,7 @@ class StockMutationService
 
     public function createTransfer(array $data, int $userId, string $userRole): StockTransfer
     {
-        $this->assertPrivilegedRole($userRole);
+        $this->assertRole($userRole, UserRoles::TRANSFER_CREATORS, 'Hanya Warehouse Manager atau Warehouse Staff yang dapat membuat transfer.');
 
         return DB::transaction(function () use ($data, $userId) {
             $fromLocationId = $data['from_warehouse_location_id'] ?? $this->selectAutomaticLocation(
@@ -162,9 +222,7 @@ class StockMutationService
         int $userId,
         string $userRole
     ): StockTransfer {
-        $this->assertPrivilegedRole($userRole);
-
-        return DB::transaction(function () use ($transfer, $nextStatus, $data, $userId) {
+        return DB::transaction(function () use ($transfer, $nextStatus, $data, $userId, $userRole) {
             $transfer = StockTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
             $fromStatus = $transfer->status;
             $allowed = [
@@ -178,6 +236,8 @@ class StockMutationService
             if (! in_array($nextStatus, $allowed[$fromStatus] ?? [], true)) {
                 throw new Exception("Status {$fromStatus} tidak dapat diubah menjadi {$nextStatus}.", 422);
             }
+
+            $this->assertTransferStatusRole($userRole, $nextStatus);
 
             $updates = [
                 'status' => $nextStatus,
@@ -300,12 +360,46 @@ class StockMutationService
 
     private function notifyTransfer(StockTransfer $transfer, string $title): void
     {
-        $transfer->loadMissing(['product:id,name', 'fromWarehouse:id,name', 'toWarehouse:id,name']);
+        $transfer->loadMissing(['product:id,name', 'fromWarehouse:id,name', 'toWarehouse:id,name', 'creator:id,name,role']);
         $message = "{$transfer->transfer_number}: {$transfer->product->name} dari {$transfer->fromWarehouse->name} ke {$transfer->toWarehouse->name}.";
-        User::query()
-            ->whereIn('role', ['admin_gudang', 'superadmin', 'super_admin'])
+
+        $recipientQuery = User::query();
+        match ($transfer->status) {
+            'pending' => $recipientQuery->where('role', UserRoles::WAREHOUSE_MANAGER),
+            'approved', 'rejected' => $recipientQuery->whereKey($transfer->created_by),
+            'in_transit', 'arrived' => $recipientQuery->whereIn('role', [
+                UserRoles::WAREHOUSE_MANAGER,
+                UserRoles::INVENTORY_CONTROLLER,
+            ]),
+            'discrepancy' => $recipientQuery->where(function ($query) use ($transfer) {
+                $query
+                    ->whereKey($transfer->created_by)
+                    ->orWhereIn('role', [
+                        UserRoles::WAREHOUSE_MANAGER,
+                        UserRoles::INVENTORY_CONTROLLER,
+                    ]);
+            }),
+            'completed', 'cancelled' => $recipientQuery->where(function ($query) use ($transfer) {
+                $query
+                    ->whereKey($transfer->created_by)
+                    ->orWhere('role', UserRoles::WAREHOUSE_MANAGER);
+            }),
+            default => $recipientQuery->where('role', UserRoles::WAREHOUSE_MANAGER),
+        };
+
+        $recipientQuery
             ->get()
-            ->each->notify(new StockTransferStatusChanged($transfer, $title, $message));
+            ->unique('id')
+            ->tap(function ($recipients) use ($transfer, $title, $message) {
+                $recipients->each->notify(new StockTransferStatusChanged($transfer, $title, $message));
+
+                app(PushNotificationService::class)->sendToUsers($recipients, $title, $message, [
+                    'type' => 'stock_transfer',
+                    'transfer_id' => $transfer->id,
+                    'transfer_number' => $transfer->transfer_number,
+                    'status' => $transfer->status,
+                ]);
+            });
     }
 
     private function transferStatusTitle(string $status): string
@@ -324,7 +418,7 @@ class StockMutationService
 
     public function createAdjustment(array $data, int $userId, string $userRole): StockMutation
     {
-        $this->assertPrivilegedRole($userRole);
+        $this->assertRole($userRole, UserRoles::STOCK_CONTROLLERS, 'Hanya Warehouse Manager atau Inventory Controller yang dapat melakukan adjustment stok.');
 
         return DB::transaction(function () use ($data, $userId) {
             $locationId = $data['warehouse_location_id'] ?? null;
@@ -507,6 +601,26 @@ class StockMutationService
         return (int) $selected['id'];
     }
 
+    private function selectPrimaryWarehouseId(): int
+    {
+        $warehouse = Warehouse::query()
+            ->where(function ($query) {
+                $query
+                    ->where('name', 'like', '%pusat%')
+                    ->orWhere('name', 'like', '%utama%')
+                    ->orWhere('name', 'like', '%main%');
+            })
+            ->orderBy('id')
+            ->first()
+            ?? Warehouse::query()->orderBy('id')->first();
+
+        if (! $warehouse) {
+            throw new Exception('Belum ada gudang utama yang tersedia.', 422);
+        }
+
+        return (int) $warehouse->id;
+    }
+
     private function ensureValidWarehouseLocationPair(?int $warehouseId, ?int $locationId): void
     {
         if (! $locationId) {
@@ -547,12 +661,29 @@ class StockMutationService
         }
     }
 
-    private function assertPrivilegedRole(string $userRole): void
+    private function assertTransferStatusRole(string $userRole, string $nextStatus): void
     {
-        $allowedRoles = ['admin_gudang', 'superadmin', 'super_admin'];
+        $allowedRoles = match ($nextStatus) {
+            'approved', 'rejected', 'cancelled' => UserRoles::TRANSFER_APPROVERS,
+            'in_transit', 'arrived' => UserRoles::TRANSFER_OPERATORS,
+            'completed', 'discrepancy' => UserRoles::TRANSFER_COMPLETERS,
+            default => [],
+        };
 
-        if (! in_array($userRole, $allowedRoles, true)) {
-            throw new Exception('Hanya Admin Gudang atau Super Admin yang memiliki otoritas.', 403);
+        $message = match ($nextStatus) {
+            'approved', 'rejected', 'cancelled' => 'Hanya Warehouse Manager yang dapat menyetujui, menolak, atau membatalkan transfer.',
+            'in_transit', 'arrived' => 'Hanya Warehouse Manager atau Warehouse Staff yang dapat memproses pergerakan transfer.',
+            'completed', 'discrepancy' => 'Hanya Warehouse Manager atau Inventory Controller yang dapat menyelesaikan atau menandai selisih transfer.',
+            default => 'Role tidak memiliki otoritas untuk status transfer ini.',
+        };
+
+        $this->assertRole($userRole, $allowedRoles, $message);
+    }
+
+    private function assertRole(string $userRole, array $allowedRoles, string $message): void
+    {
+        if (! UserRoles::can(UserRoles::normalize($userRole), $allowedRoles)) {
+            throw new Exception($message, 403);
         }
     }
 
