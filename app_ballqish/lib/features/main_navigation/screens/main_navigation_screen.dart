@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
@@ -21,6 +22,7 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final _auth = AuthService();
+  final _analytics = AnalyticsService();
   final _notifications = NotificationService();
   var _index = 0;
   var _unreadNotifications = 0;
@@ -33,9 +35,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     MoreScreen(),
   ];
 
+  static const _screenNames = [
+    'dashboard',
+    'inventory',
+    'stock_transfers',
+    'more',
+  ];
+
   @override
   void initState() {
     super.initState();
+    _analytics.logScreen(_screenNames[_index]);
     _loadUnreadNotifications();
     _notificationTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -71,6 +81,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (_) => false,
     );
+  }
+
+  void _selectPage(int index) {
+    setState(() => _index = index);
+    _analytics.logScreen(_screenNames[index]);
   }
 
   @override
@@ -147,7 +162,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
         child: NavigationBar(
           selectedIndex: _index,
-          onDestinationSelected: (value) => setState(() => _index = value),
+          onDestinationSelected: _selectPage,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.dashboard_outlined),

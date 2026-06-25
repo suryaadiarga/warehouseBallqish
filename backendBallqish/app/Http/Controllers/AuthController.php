@@ -50,9 +50,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Hapus token lama agar tidak menumpuk di database (Opsional, bagus untuk keamanan 1 device)
-        $user->tokens()->delete();
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return $this->successResponse([
@@ -67,8 +64,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Menghapus token yang sedang digunakan untuk request ini
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return $this->successResponse(null, 'Berhasil logout dan token telah dihapus');
     }

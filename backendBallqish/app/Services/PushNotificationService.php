@@ -12,7 +12,12 @@ use Illuminate\Support\Facades\Log;
 class PushNotificationService
 {
     private const FIREBASE_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
     private const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+    private bool $credentialsLoaded = false;
+
+    private ?array $credentials = null;
 
     public function sendToUsers(EloquentCollection|Collection $users, string $title, string $body, array $data = []): void
     {
@@ -54,6 +59,7 @@ class PushNotificationService
 
             if ($response->status() === 404 || $response->status() === 400) {
                 $deviceToken->delete();
+
                 return;
             }
 
@@ -95,7 +101,7 @@ class PushNotificationService
         ], JSON_THROW_ON_ERROR));
 
         $payload = $this->base64UrlEncode(json_encode([
-            'iss' => config('services.firebase.client_email'),
+            'iss' => $this->credential('client_email', 'client_email'),
             'scope' => self::FIREBASE_SCOPE,
             'aud' => self::GOOGLE_TOKEN_URL,
             'iat' => $now,
@@ -103,7 +109,11 @@ class PushNotificationService
         ], JSON_THROW_ON_ERROR));
 
         $unsigned = "{$header}.{$payload}";
-        $privateKey = str_replace('\\n', "\n", (string) config('services.firebase.private_key'));
+        $privateKey = str_replace(
+            '\\n',
+            "\n",
+            (string) $this->credential('private_key', 'private_key')
+        );
         openssl_sign($unsigned, $signature, $privateKey, OPENSSL_ALGO_SHA256);
 
         return "{$unsigned}.{$this->base64UrlEncode($signature)}";
@@ -111,14 +121,68 @@ class PushNotificationService
 
     private function messageUrl(): string
     {
-        return 'https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send';
+        return 'https://fcm.googleapis.com/v1/projects/'
+            .$this->credential('project_id', 'project_id')
+            .'/messages:send';
     }
 
     private function configured(): bool
     {
-        return filled(config('services.firebase.project_id'))
-            && filled(config('services.firebase.client_email'))
-            && filled(config('services.firebase.private_key'));
+        return filled($this->credential('project_id', 'project_id'))
+            && filled($this->credential('client_email', 'client_email'))
+            && filled($this->credential('private_key', 'private_key'));
+    }
+
+    private function credential(string $jsonKey, string $configKey): mixed
+    {
+        $configuredValue = config("services.firebase.{$configKey}");
+
+        if (filled($configuredValue)) {
+            return $configuredValue;
+        }
+
+        return $this->credentials()[$jsonKey] ?? null;
+    }
+
+    private function credentials(): array
+    {
+        if ($this->credentialsLoaded) {
+            return $this->credentials ?? [];
+        }
+
+        $this->credentialsLoaded = true;
+        $path = config('services.firebase.credentials');
+
+        if (! is_string($path)) {
+            return [];
+        }
+
+        if (! str_starts_with($path, DIRECTORY_SEPARATOR)
+            && ! preg_match('/^[A-Za-z]:[\\\\\/]/', $path)) {
+            $path = base_path($path);
+        }
+
+        if (! is_file($path)) {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode(
+                file_get_contents($path),
+                true,
+                flags: JSON_THROW_ON_ERROR
+            );
+
+            $this->credentials = is_array($decoded) ? $decoded : [];
+        } catch (\Throwable $exception) {
+            Log::warning('Firebase service account could not be loaded.', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            $this->credentials = [];
+        }
+
+        return $this->credentials;
     }
 
     private function stringifyData(array $data): array

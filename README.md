@@ -4,6 +4,7 @@ Aplikasi **Warehouse Management System** yang terdiri dari:
 
 - **Backend**: Laravel 12 + Sanctum (`backendBallqish/`)
 - **Frontend**: Next.js (App Router) + TypeScript + Tailwind (`frontendBallqish/`)
+- **Mobile**: Flutter Android (`app_ballqish/`)
 
 ---
 
@@ -161,6 +162,9 @@ Setelah menjalankan `php artisan db:seed`, kamu bisa login dengan:
 | Warehouse Staff | staff@warehouse.com | password123 |
 | Inventory Controller | inventory@warehouse.com | password123 |
 | Super Admin | boss@warehouse.com | password123 |
+| Warehouse Manager 1-3 | admin1@warehouse.com s.d. admin3@warehouse.com | password123 |
+| Warehouse Staff 1-3 | staff1@warehouse.com s.d. staff3@warehouse.com | password123 |
+| Inventory Controller 1-3 | inventory1@warehouse.com s.d. inventory3@warehouse.com | password123 |
 
 ---
 
@@ -198,6 +202,40 @@ Seeder utama menjalankan: `UserSeeder`, `CategorySeeder`, `WarehouseSeeder`, `Su
 
 ---
 
+## Mobile App Auto Update
+
+Aplikasi Flutter Android mengecek pembaruan dari endpoint publik:
+
+```txt
+GET /api/mobile/version
+```
+
+Saat `version_code` server lebih besar dari build yang terpasang, aplikasi akan menampilkan dialog pembaruan, mengunduh APK dari `download_url`, memvalidasi `sha256` jika tersedia, lalu membuka installer Android.
+
+Konfigurasi versi ada di `.env` backend:
+
+```env
+MOBILE_APP_VERSION_NAME=1.0.1
+MOBILE_APP_VERSION_CODE=2
+MOBILE_APP_MINIMUM_VERSION_CODE=1
+MOBILE_APP_APK_PATH=mobile/ballqish-latest.apk
+MOBILE_APP_SHA256=
+MOBILE_APP_RELEASE_NOTES="Pembaruan stabilitas dan perbaikan bug."
+```
+
+Alur rilis update:
+
+1. Naikkan versi Flutter di `app_ballqish/pubspec.yaml`, contoh `version: 1.0.2+3`.
+2. Build APK Android.
+3. Upload APK ke `backendBallqish/public/mobile/ballqish-latest.apk` di server.
+4. Set `MOBILE_APP_VERSION_CODE` lebih tinggi dari build lama.
+5. Isi `MOBILE_APP_SHA256` agar APK yang diunduh bisa diverifikasi.
+6. Jalankan `php artisan config:clear` atau refresh config cache di server.
+
+Catatan Android: instalasi APK tetap memerlukan persetujuan user dan izin "Install unknown apps" untuk aplikasi ini. Android tidak mengizinkan aplikasi non-Play Store mengganti APK sendiri tanpa konfirmasi user.
+
+---
+
 ## 🔧 Troubleshooting
 
 - **500 / APP_KEY error**: pastikan `.env` ada dan sudah `php artisan key:generate`.
@@ -211,5 +249,6 @@ Seeder utama menjalankan: `UserSeeder`, `CategorySeeder`, `WarehouseSeeder`, `Su
 ```text
 warehouseBallqish/
 ├─ backendBallqish/   # Laravel API
-└─ frontendBallqish/  # Next.js UI
+├─ frontendBallqish/  # Next.js UI
+└─ app_ballqish/      # Flutter Android app
 ```

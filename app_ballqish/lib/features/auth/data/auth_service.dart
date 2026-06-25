@@ -1,14 +1,24 @@
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../notifications/data/push_notification_service.dart';
 
 class AuthService {
-  AuthService({ApiClient? apiClient, TokenStorage? tokenStorage})
-    : _api = apiClient ?? ApiClient(),
-      _storage = tokenStorage ?? TokenStorage();
+  AuthService({
+    ApiClient? apiClient,
+    TokenStorage? tokenStorage,
+    PushNotificationService? pushNotificationService,
+    AnalyticsService? analyticsService,
+  }) : _api = apiClient ?? ApiClient(),
+       _storage = tokenStorage ?? TokenStorage(),
+       _pushNotifications =
+           pushNotificationService ?? PushNotificationService(),
+       _analytics = analyticsService ?? AnalyticsService();
 
   final ApiClient _api;
   final TokenStorage _storage;
+  final PushNotificationService _pushNotifications;
+  final AnalyticsService _analytics;
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response =
@@ -18,7 +28,8 @@ class AuthService {
     final token = data['access_token'].toString();
     final user = data['user'] as Map<String, dynamic>;
     await _storage.saveSession(token, user);
-    await PushNotificationService().syncDeviceToken();
+    await _pushNotifications.syncDeviceToken();
+    await _analytics.logLogin(user);
     return user;
   }
 
@@ -31,10 +42,17 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await PushNotificationService().unregisterDeviceToken();
+      await _analytics.logLogout();
+    } catch (_) {}
+
+    try {
+      await _pushNotifications.unregisterDeviceToken();
+    } catch (_) {}
+
+    try {
       await _api.post('/logout');
-    } finally {
-      await _storage.clear();
-    }
+    } catch (_) {}
+
+    await _storage.clear();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/update/app_update_service.dart';
 import '../../categories/screens/category_list_screen.dart';
 import '../../products/screens/product_list_screen.dart';
 import '../../warehouse_locations/screens/warehouse_location_list_screen.dart';
@@ -38,6 +39,29 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.sky50,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.system_update, color: AppColors.sky600),
+            ),
+            title: const Text('Cek pembaruan'),
+            subtitle: const Text('Unduh versi terbaru dari server Ballqish'),
+            trailing: const Icon(
+              Icons.chevron_right,
+              color: AppColors.slate400,
+            ),
+            onTap: () => AppUpdateService().checkAndPrompt(
+              context,
+              showUpToDateMessage: true,
+            ),
           ),
         ),
         ...menus.map(

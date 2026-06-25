@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceTokenController;
+use App\Http\Controllers\MobileAppController;
 use App\Http\Controllers\ProductAnalyticsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductStockController;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 // Public
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/mobile/version', [MobileAppController::class, 'version']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
