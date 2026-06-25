@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/analytics/analytics_service.dart';
+import 'core/storage/token_storage.dart';
 import 'core/theme/app_theme.dart';
+import 'core/update/app_update_service.dart';
+import 'features/auth/data/auth_service.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/main_navigation/screens/main_navigation_screen.dart';
-import 'core/storage/token_storage.dart';
-import 'features/auth/data/auth_service.dart';
 import 'features/notifications/data/push_notification_service.dart';
 
 class BallqishApp extends StatelessWidget {
@@ -25,6 +27,7 @@ class BallqishApp extends StatelessWidget {
         title: 'Ballqish WMS',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
+        navigatorObservers: [AnalyticsService().observer],
         home: const SessionGate(),
       ),
     );
@@ -53,7 +56,7 @@ class _SessionGateState extends State<SessionGate> {
   Future<void> _checkSession() async {
     final token = await _storage.getToken();
     if (token == null) {
-      setState(() => _loading = false);
+      _finishLoading();
       return;
     }
 
@@ -65,9 +68,18 @@ class _SessionGateState extends State<SessionGate> {
       await _storage.clear();
     }
 
-    if (mounted) {
-      setState(() => _loading = false);
-    }
+    _finishLoading();
+  }
+
+  void _finishLoading() {
+    if (!mounted) return;
+
+    setState(() => _loading = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppUpdateService().checkAndPrompt(context);
+      }
+    });
   }
 
   @override
