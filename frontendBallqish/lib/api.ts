@@ -11,7 +11,7 @@ export type ApiEnvelope<T> = {
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api';
 
 export function resolveApiAssetUrl(path?: string | null) {
   const fallback = `${API_BASE_URL.replace(/\/api\/?$/, '')}/product-images/default-product.webp`;

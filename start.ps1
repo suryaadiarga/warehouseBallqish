@@ -39,23 +39,72 @@ function Invoke-Checked {
     }
 }
 
+function Get-FileHeader {
+    param(
+        [string]$Path,
+        [int]$Length = 20
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return ''
+    }
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $buffer = [byte[]]::new($Length)
+        $read = $stream.Read($buffer, 0, $buffer.Length)
+        return [System.Text.Encoding]::ASCII.GetString($buffer, 0, $read)
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
+function Get-LocalComposerPhar {
+    $toolsPath = Join-Path $projectRoot '.tools'
+    $localComposerPath = Join-Path $toolsPath 'composer.phar'
+
+    if (-not (Test-Path -LiteralPath $localComposerPath)) {
+        Write-Step 'Mengunduh Composer lokal'
+        New-Item -ItemType Directory -Path $toolsPath -Force | Out-Null
+        Invoke-WebRequest `
+            -Uri 'https://getcomposer.org/download/latest-stable/composer.phar' `
+            -OutFile $localComposerPath
+    }
+
+    return $localComposerPath
+}
+
 function Invoke-ComposerChecked {
     param([string[]]$Arguments)
 
     $composer = Get-Command composer -ErrorAction SilentlyContinue
-    if (-not $composer) {
-        throw "'composer' tidak ditemukan. Pasang Composer dan tambahkan ke PATH."
+
+    if ($composer) {
+        $composerPath = $composer.Source
+        $composerExtension = [System.IO.Path]::GetExtension($composerPath)
+        $composerHeader = Get-FileHeader -Path $composerPath
+
+        try {
+            if (
+                $composerExtension -eq '.phar' -or
+                $composerHeader.StartsWith('<?php') -or
+                $composerHeader.StartsWith('#!/usr/bin/env php')
+            ) {
+                Invoke-Checked -Command 'php' -Arguments (@($composerPath) + $Arguments)
+                return
+            }
+
+            Invoke-Checked -Command 'composer' -Arguments $Arguments
+            return
+        }
+        catch {
+            Write-Host "Composer global gagal, mencoba Composer lokal. Detail: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
     }
 
-    $composerPath = $composer.Source
-    $composerExtension = [System.IO.Path]::GetExtension($composerPath)
-
-    if ($composerExtension -eq '' -or $composerExtension -eq '.phar') {
-        Invoke-Checked -Command 'php' -Arguments (@($composerPath) + $Arguments)
-        return
-    }
-
-    Invoke-Checked -Command 'composer' -Arguments $Arguments
+    $localComposerPath = Get-LocalComposerPhar
+    Invoke-Checked -Command 'php' -Arguments (@($localComposerPath) + $Arguments)
 }
 
 if (-not (Test-Path (Join-Path $backendPath 'artisan'))) {
@@ -67,7 +116,6 @@ if (-not (Test-Path (Join-Path $frontendPath 'package.json'))) {
 }
 
 Assert-Command -Name 'php' -InstallHint 'Pasang PHP 8.2 atau lebih baru dan tambahkan ke PATH.'
-Assert-Command -Name 'composer' -InstallHint 'Pasang Composer dan tambahkan ke PATH.'
 Assert-Command -Name 'node' -InstallHint 'Pasang Node.js dan tambahkan ke PATH.'
 Assert-Command -Name 'npm' -InstallHint 'Pasang npm dan tambahkan ke PATH.'
 

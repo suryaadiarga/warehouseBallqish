@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { extractApiErrorMessage } from '@/lib/api';
-import { ArrowRight, Lock, Mail, Warehouse } from 'lucide-react';
+import { ArrowRight, Download, Lock, Mail, Warehouse } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 
@@ -153,6 +153,15 @@ function LoginContent() {
                 <span>{loading ? 'Memverifikasi...' : 'Masuk'}</span>
                 {!loading ? <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /> : null}
               </button>
+
+              <a
+                href="/mobile/ballqish-latest.apk"
+                download
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 font-bold text-sky-700 transition-all hover:border-sky-200 hover:bg-sky-100"
+              >
+                <Download size={18} />
+                <span>Download Mobile App</span>
+              </a>
             </form>
           </div>
         </div>
